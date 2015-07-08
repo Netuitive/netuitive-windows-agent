@@ -139,6 +139,10 @@ namespace BloombergFLP.CollectdWin
                     }
                     Thread.Sleep(_interval*1000);
                 }
+                catch (ThreadInterruptedException ex)
+                {
+                    Logger.Info("Read thread interrupted");
+                }
                 catch (Exception exp)
                 {
                     Logger.Error("ReadThreadProc() got exception : ", exp);
@@ -182,6 +186,10 @@ namespace BloombergFLP.CollectdWin
                     }
                     Thread.Sleep(_interval*1000);
                 }
+                catch (ThreadInterruptedException ex)
+                {
+                    Logger.Info("Write thread interrupted");
+                }
                 catch (Exception exp)
                 {
                     Logger.Error("WriteThreadProc() got exception : ", exp);
@@ -199,6 +207,10 @@ namespace BloombergFLP.CollectdWin
                 {
                     _aggregator.RemoveExpiredEntries();
                     Thread.Sleep(_timeout*1000);
+                }
+                catch (ThreadInterruptedException ex)
+                {
+                    Logger.Info("Aggregator thread interrupted");
                 }
                 catch (Exception exp)
                 {
