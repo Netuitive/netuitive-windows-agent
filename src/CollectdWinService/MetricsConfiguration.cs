@@ -34,6 +34,13 @@ namespace BloombergFLP.CollectdWin
             set { base["Amqp"] = value; }
         }
 
+        [ConfigurationProperty("WriteHTTP", IsRequired = false)]
+        public WriteHTTPConfig WriteHTTP
+        {
+            get { return (WriteHTTPConfig)base["WriteHTTP"]; }
+            set { base["WriteHTTP"] = value; }
+        }
+
         [ConfigurationProperty("WindowsPerformanceCounters", IsRequired = false)]
         public WindowsPerformanceCountersConfig WindowsPerformanceCounters
         {
@@ -113,6 +120,18 @@ namespace BloombergFLP.CollectdWin
                     set { base["RoutingKeyPrefix"] = value; }
                 }
             }
+        }
+
+        public sealed class WriteHTTPConfig : ConfigurationElement
+        {
+            [ConfigurationProperty("url", IsRequired = false)]
+            public String url
+            {
+                get { return (string)base["url"]; }
+                set { base["url"] = value; }
+            }
+
+           
         }
 
         public sealed class CounterConfig : ConfigurationElement
