@@ -44,8 +44,21 @@ namespace BloombergFLP.CollectdWin
             {
                 if (counter.Instance == "*")
                 {
-                    var cat = new PerformanceCounterCategory(counter.Category);
-                    string[] instances = cat.GetInstanceNames();
+                    string[] instances = new string[0];
+                    try
+                    {
+                        var cat = new PerformanceCounterCategory(counter.Category);
+                        instances = cat.GetInstanceNames();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error("Could not initialise performance counter category: {0}", counter.Category, ex);
+                    }
+                    if (instances.Length == 0)
+                    {
+                        Logger.Warn("No instances found for category: {0}", counter.Category);
+                    }
+
                     foreach (string instance in instances)
                     {
                         // Replace collectd_plugin_instance with the Instance got from counter
@@ -83,39 +96,46 @@ namespace BloombergFLP.CollectdWin
             var metricValueList = new List<MetricValue>();
             foreach (Metric metric in _metrics)
             {
-                var vals = new List<double>();
-                foreach (PerformanceCounter ctr in metric.Counters)
+                try
                 {
-                    double val = ctr.NextValue();
-                    if (metric.ScaleUpFactor > 0)
+                    var vals = new List<double>();
+                    foreach (PerformanceCounter ctr in metric.Counters)
                     {
-                        val = val*metric.ScaleUpFactor;
-                    }
-                    else
-                    {
-                        if (metric.ScaleDownFactor > 0)
+                        double val = ctr.NextValue();
+                        if (metric.ScaleUpFactor > 0)
                         {
-                            val = val/metric.ScaleDownFactor;
+                            val = val * metric.ScaleUpFactor;
                         }
+                        else
+                        {
+                            if (metric.ScaleDownFactor > 0)
+                            {
+                                val = val / metric.ScaleDownFactor;
+                            }
+                        }
+                        vals.Add(val);
                     }
-                    vals.Add(val);
+
+                    var metricValue = new MetricValue
+                    {
+                        HostName = _hostName,
+                        PluginName = metric.CollectdPlugin,
+                        PluginInstanceName = metric.CollectdPluginInstance,
+                        TypeName = metric.CollectdType,
+                        TypeInstanceName = metric.CollectdTypeInstance,
+                        Values = vals.ToArray()
+                    };
+
+                    TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
+                    double epoch = t.TotalMilliseconds / 1000;
+                    metricValue.Epoch = Math.Round(epoch, 3);
+
+                    metricValueList.Add(metricValue);
                 }
-
-                var metricValue = new MetricValue
+                catch (Exception ex)
                 {
-                    HostName = _hostName,
-                    PluginName = metric.CollectdPlugin,
-                    PluginInstanceName = metric.CollectdPluginInstance,
-                    TypeName = metric.CollectdType,
-                    TypeInstanceName = metric.CollectdTypeInstance,
-                    Values = vals.ToArray()
-                };
-
-                TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
-                double epoch = t.TotalMilliseconds/1000;
-                metricValue.Epoch = Math.Round(epoch, 3);
-
-                metricValueList.Add(metricValue);
+                    Logger.Error(string.Format("Failed to collect metric: {0}, {1}, {2}", metric.Category, metric.Instance, metric.CounterName), ex);
+                }
             }
             return (metricValueList);
         }
