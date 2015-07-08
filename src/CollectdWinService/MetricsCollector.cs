@@ -146,6 +146,7 @@ namespace BloombergFLP.CollectdWin
                 catch (Exception exp)
                 {
                     Logger.Error("ReadThreadProc() got exception : ", exp);
+                    Thread.Sleep(_interval * 1000);
                 }
             }
             Logger.Trace("ReadThreadProc() return");
@@ -193,6 +194,7 @@ namespace BloombergFLP.CollectdWin
                 catch (Exception exp)
                 {
                     Logger.Error("WriteThreadProc() got exception : ", exp);
+                    Thread.Sleep(_interval * 1000);
                 }
             }
             Logger.Trace("WriteThreadProc() return");
