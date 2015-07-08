@@ -34,7 +34,7 @@
                      Guid="{59727D06-40F4-4510-800E-8D224A652627}">
             <File Id="CollectdWinService.exe"
                   Name="CollectdWinService.exe"
-                  Source="..\CollectdWinService\bin\$(var.Platform)\Debug\CollectdWinService.exe"
+                  Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\CollectdWinService.exe"
                   Vital="yes"
                   KeyPath="yes"
                   DiskId="1" />
@@ -52,13 +52,13 @@
                   DiskId="1" />
             <File Id="types.db"
                   Name="types.db"
-                  Source="..\CollectdWinService\bin\$(var.Platform)\Debug\types.db"
+                  Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\types.db"
                   Vital="yes"
                   KeyPath="no"
                   DiskId="1" />
             <File Id="CollectdWinService.exe.config"
                   Name="CollectdWinService.exe.config"
-                  Source="..\CollectdWinService\bin\$(var.Platform)\Debug\CollectdWinService.exe.config"
+                  Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\CollectdWinService.exe.config"
                   Vital="yes"
                   KeyPath="no"
                   DiskId="1" />
