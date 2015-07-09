@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 
 namespace BloombergFLP.CollectdWin
 {
@@ -14,7 +15,15 @@ namespace BloombergFLP.CollectdWin
 
         public static string GetHostName()
         {
-            return (Environment.MachineName.ToLower());
+            var config = ConfigurationManager.GetSection("CollectdWinConfig") as CollectdWinConfig;
+            if (config == null)
+            {
+                throw new Exception("Cannot get configuration section : CollectdWinConfig");
+            }
+            if (config.GeneralSettings.Hostname.Length > 0)
+                return config.GeneralSettings.Hostname;
+            else
+                return (Environment.MachineName.ToLower());
         }
     }
 }

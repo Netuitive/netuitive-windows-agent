@@ -237,6 +237,13 @@ namespace BloombergFLP.CollectdWin
                 get { return (bool) base["StoreRates"]; }
                 set { base["StoreRates"] = value; }
             }
+
+            [ConfigurationProperty("Hostname", IsRequired = true)]
+            public string Hostname
+            {
+                get { return (string)base["Hostname"]; }
+                set { base["Hostname"] = value; }
+            }
         }
 
         public class PluginCollection : ConfigurationElementCollection
