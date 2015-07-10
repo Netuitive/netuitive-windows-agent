@@ -41,6 +41,13 @@ namespace BloombergFLP.CollectdWin
             set { base["WriteHTTP"] = value; }
         }
 
+        [ConfigurationProperty("WriteNetuitive", IsRequired = false)]
+        public WriteNetuitiveConfig WriteNetuitive
+        {
+            get { return (WriteNetuitiveConfig)base["WriteNetuitive"]; }
+            set { base["WriteNetuitive"] = value; }
+        }
+
         [ConfigurationProperty("WindowsPerformanceCounters", IsRequired = false)]
         public WindowsPerformanceCountersConfig WindowsPerformanceCounters
         {
@@ -124,16 +131,40 @@ namespace BloombergFLP.CollectdWin
 
         public sealed class WriteHTTPConfig : ConfigurationElement
         {
-            [ConfigurationProperty("url", IsRequired = false)]
+            [ConfigurationProperty("url", IsRequired = true)]
+            public String url
+            {
+                get { return (string)base["url"]; }
+                set { base["url"] = value; }
+            }
+        }
+
+        public sealed class WriteNetuitiveConfig : ConfigurationElement
+        {
+            [ConfigurationProperty("url", IsRequired = true)]
             public String url
             {
                 get { return (string)base["url"]; }
                 set { base["url"] = value; }
             }
 
-           
+            [ConfigurationProperty("location", IsRequired = false)]
+            public String location
+            {
+                get { return (string)base["location"]; }
+                set { base["location"] = value; }
+            }
+
+            [ConfigurationProperty("type", IsRequired = false)]
+            public String type
+            {
+                get { return (string)base["type"]; }
+                set { base["type"] = value; }
+            }
+        
         }
 
+        
         public sealed class CounterConfig : ConfigurationElement
         {
             [ConfigurationProperty("Category", IsRequired = true)]
@@ -238,7 +269,7 @@ namespace BloombergFLP.CollectdWin
                 set { base["StoreRates"] = value; }
             }
 
-            [ConfigurationProperty("Hostname", IsRequired = true)]
+            [ConfigurationProperty("Hostname", IsRequired = false)]
             public string Hostname
             {
                 get { return (string)base["Hostname"]; }
