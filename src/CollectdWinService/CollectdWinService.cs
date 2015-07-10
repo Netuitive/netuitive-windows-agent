@@ -31,10 +31,6 @@ namespace BloombergFLP.CollectdWin
         // public accessibility for running as a console application
         public virtual void StartService(params string[] args)
         {
-            #if DEBUG
-                System.Diagnostics.Debugger.Launch();
-            #endif
-
             Logger.Trace("StartService() begin");
             _metricsCollector = new MetricsCollector();
             _metricsCollector.ConfigureAll();
