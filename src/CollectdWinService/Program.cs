@@ -14,10 +14,20 @@ namespace BloombergFLP.CollectdWin
         /// </summary>
         public static void Main(string[] args)
         {
-            var config = ConfigurationManager.GetSection("CollectdWinConfig") as CollectdWinConfig;
-            if (config == null)
+            #if DEBUG
+                System.Diagnostics.Debugger.Launch();
+            #endif
+            try {
+                var config = ConfigurationManager.GetSection("CollectdWinConfig") as CollectdWinConfig;
+                if (config == null)
+                {
+                    Logger.Fatal("Main(): cannot get configuration section");
+                    return;
+                }
+            }
+            catch (Exception ex)
             {
-                Logger.Error("Main(): cannot get configuration section");
+                Logger.Fatal("Failed to parse configuration", ex);
                 return;
             }
 
