@@ -114,9 +114,16 @@ namespace BloombergFLP.CollectdWin
                             // skip if plugin is not a readplugin, it might be a writeplugin
                             continue;
                         }
+
+                        double start = Util.GetNow();
                         IList<MetricValue> metricValues = readPlugin.Read();
+                        double end = Util.GetNow();
+
                         if (metricValues == null || !metricValues.Any())
                             continue;
+
+                        Logger.Debug("Read {0} metrics in {1}ms", metricValues.Count, end - start);
+
                         lock (_queueLock)
                         {
                             foreach (MetricValue metric in metricValues)
@@ -155,6 +162,9 @@ namespace BloombergFLP.CollectdWin
         private void WriteThreadProc()
         {
             Logger.Trace("WriteThreadProc() begin");
+            // Wait a few seconds to give read thread a chance to get metrics.
+            // Otherwise write thread is always pushing metrics _interval seconds after they were read
+            Thread.Sleep(15000); 
             while (_runWriteThread)
             {
                 try
