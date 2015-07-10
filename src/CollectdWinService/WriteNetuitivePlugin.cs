@@ -55,7 +55,7 @@ namespace Netuitive.CollectdWin
             string type = config.WriteNetuitive.type;
             if (type == null || type.Trim().Length == 0)
             {
-                _elementType = "WinServ";
+                _elementType = "WINSRV";
             }
             else
             {
