@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using NLog;
+using System.Text.RegularExpressions;
 
 namespace BloombergFLP.CollectdWin
 {
@@ -42,17 +43,44 @@ namespace BloombergFLP.CollectdWin
 
             foreach (CollectdWinConfig.CounterConfig counter in config.WindowsPerformanceCounters.Counters)
             {
-                if (counter.Instance == "*")
+
+                if (counter.Instance == "")
                 {
+                    // Instance not specified 
+                    AddPerformanceCounter(counter.Category, counter.Name,
+                        counter.Instance, counter.ScaleUpFactor,
+                        counter.ScaleDownFactor, counter.CollectdPlugin,
+                        counter.CollectdPluginInstance, counter.CollectdType,
+                        counter.CollectdTypeInstance);
+                }
+                else
+                {
+                    // Match instance with regex
                     string[] instances = new string[0];
                     try
                     {
+                        Regex regex = new Regex(counter.Instance, RegexOptions.None);
+
                         var cat = new PerformanceCounterCategory(counter.Category);
                         instances = cat.GetInstanceNames();
+                        List<string> instanceList = new List<string>();
+                        foreach (string instance in instances)
+                        {
+                            if (regex.IsMatch(instance))
+                            {
+                                instanceList.Add(instance);
+                            }
+                        }
+                        instances = instanceList.ToArray();
+
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        Logger.Error(string.Format("Failed to parse instance regular expression: category={0}, instance={1}, counter={2}", counter.Category, counter.Instance, counter.Name), ex);
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error("Could not initialise performance counter category: {0}", counter.Category, ex);
+                        Logger.Error(string.Format("Could not initialise performance counter category: {0}", counter.Category), ex);
                     }
                     if (instances.Length == 0)
                     {
@@ -68,14 +96,6 @@ namespace BloombergFLP.CollectdWin
                             instance, counter.CollectdType,
                             counter.CollectdTypeInstance);
                     }
-                }
-                else
-                {
-                    AddPerformanceCounter(counter.Category, counter.Name,
-                        counter.Instance, counter.ScaleUpFactor,
-                        counter.ScaleDownFactor, counter.CollectdPlugin,
-                        counter.CollectdPluginInstance, counter.CollectdType,
-                        counter.CollectdTypeInstance);
                 }
             }
             Logger.Info("WindowsPerformanceCounter plugin configured");
@@ -145,10 +165,10 @@ namespace BloombergFLP.CollectdWin
             string collectdTypeInstance)
         {
             string logstr =
-                string.Format(
-                    "Category:{0} - Instance:{1} - counter:{2} - ScaleUpFactor:{3} - ScaleDownFactor:{4} -  CollectdPlugin:{5} - CollectdPluginInstance:{6} - CollectdType:{7} - CollectdTypeInstance:{8}",
-                    category, instance, names, scaleUpFactor, scaleDownFactor, collectdPlugin, collectdPluginInstance,
-                    collectdType, collectdTypeInstance);
+                string.Format(new FixedLengthFormatter(), 
+                    "Category={0}, Counter={1}, Instance={2}, CollectdPlugin={3}, CollectdPluginInstance={4}, CollectdType={5}, CollectdTypeInstance={6}, ScaleUpFactor={7}, ScaleDownFactor={8}",
+                    category, names, instance, collectdPlugin, collectdPluginInstance,
+                    collectdType, collectdTypeInstance, scaleUpFactor, scaleDownFactor);
 
             try
             {
@@ -176,6 +196,23 @@ namespace BloombergFLP.CollectdWin
             }
         }
     }
+
+    public class FixedLengthFormatter : IFormatProvider, ICustomFormatter
+    {
+        public string Format(string format, object arg, IFormatProvider formatProvider)
+        {
+            string s = arg.ToString();
+            s += "                              ";
+            return s.Substring(0, 30);
+        }
+
+        public object GetFormat(Type formatType)
+        {
+            return (formatType == typeof(ICustomFormatter)) ? this : null;
+        }
+    }
+
+
 }
 
 // ----------------------------------------------------------------------------
