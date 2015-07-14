@@ -29,9 +29,9 @@ namespace BloombergFLP.CollectdWin
             }
         }
 
-        public IList<IMetricsPlugin> CreatePlugins()
+        public IList<ICollectdPlugin> CreatePlugins()
         {
-            IList<IMetricsPlugin> plugins = new List<IMetricsPlugin>();
+            IList<ICollectdPlugin> plugins = new List<ICollectdPlugin>();
             foreach (var entry in _registry)
             {
                 Type classType = Type.GetType(entry.Value);
@@ -40,7 +40,7 @@ namespace BloombergFLP.CollectdWin
                     Logger.Error("Cannot create plugin:{0}, class:{1}", entry.Key, entry.Value);
                     continue;
                 }
-                var plugin = (IMetricsPlugin) Activator.CreateInstance(classType);
+                var plugin = (ICollectdPlugin) Activator.CreateInstance(classType);
                 plugins.Add(plugin);
             }
             return (plugins);
