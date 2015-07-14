@@ -18,7 +18,7 @@ namespace BloombergFLP.CollectdWin
         public uint ScaleUpFactor;
     }
 
-    internal class WindowsPerformanceCounterPlugin : IMetricsReadPlugin
+    internal class WindowsPerformanceCounterPlugin : ICollectdReadPlugin
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly IList<Metric> _metrics;
@@ -111,9 +111,9 @@ namespace BloombergFLP.CollectdWin
             Logger.Info("WindowsPerformanceCounter plugin stopped");
         }
 
-        public IList<MetricValue> Read()
+        public IList<CollectableValue> Read()
         {
-            var metricValueList = new List<MetricValue>();
+            var metricValueList = new List<CollectableValue>();
             foreach (Metric metric in _metrics)
             {
                 try
