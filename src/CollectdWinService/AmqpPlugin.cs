@@ -6,7 +6,7 @@ using RabbitMQ.Client;
 
 namespace BloombergFLP.CollectdWin
 {
-    internal class AmqpPlugin : IMetricsWritePlugin
+    internal class AmqpPlugin : ICollectdWritePlugin
     {
         private const int ConnectionRetryDelay = 60; // 1 minute
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
@@ -60,19 +60,24 @@ namespace BloombergFLP.CollectdWin
             Logger.Info("Amqp plugin stopped");
         }
 
-        public void Write(MetricValue metric)
+        public void Write(CollectableValue value)
         {
-            if (metric == null)
+            // This Write Plugin only knows about metrics
+            if (!(value is MetricValue))
+                return;
+
+            if (value == null)
             {
                 Logger.Debug("write() - Invalid null metric");
                 return;
             }
+            MetricValue metric = (MetricValue)value;
             if (!_connected)
                 StartConnection();
             if (_connected && _channel != null)
             {
                 string routingKey = GetAmqpRoutingKey(metric);
-                string message = metric.GetMetricJsonStr();
+                string message = metric.getJSON();
                 try
                 {
                     _channel.BasicPublish(_exchange, routingKey, null, Encoding.UTF8.GetBytes(message));
