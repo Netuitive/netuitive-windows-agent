@@ -7,7 +7,7 @@ using NLog;
 
 namespace BloombergFLP.CollectdWin
 {
-    internal class StatsdPlugin : IMetricsReadPlugin
+    internal class StatsdPlugin : ICollectdReadPlugin
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private bool _delCounters;
@@ -83,9 +83,10 @@ namespace BloombergFLP.CollectdWin
             Logger.Info("Statsd plugin stopped");
         }
 
-        public IList<MetricValue> Read()
+        public IList<CollectableValue> Read()
         {
-            return (_statsdAggregator.Read());
+            return (IList<CollectableValue>)(_statsdAggregator.Read());
+//            return (_statsdAggregator.Read());
         }
 
         public void HandleMessage(string message)
