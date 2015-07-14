@@ -3,7 +3,7 @@ using NLog;
 
 namespace BloombergFLP.CollectdWin
 {
-    internal class ConsolePlugin : IMetricsWritePlugin
+    internal class ConsolePlugin : ICollectdWritePlugin
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -22,9 +22,9 @@ namespace BloombergFLP.CollectdWin
             Logger.Info("console plugin stopped");
         }
 
-        public void Write(MetricValue metric)
+        public void Write(CollectableValue value)
         {
-            Console.WriteLine("ConsolePlugin: {0}", metric.GetMetricJsonStr());
+            Console.WriteLine("ConsolePlugin: {0}", value.getJSON());
         }
     }
 }
