@@ -5,7 +5,7 @@ using System.Net;
 
 namespace BloombergFLP.CollectdWin
 {
-    internal class WriteHTTPPlugin : IMetricsWritePlugin
+    internal class WriteHTTPPlugin : ICollectdWritePlugin
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private string _url;
@@ -35,9 +35,13 @@ namespace BloombergFLP.CollectdWin
             Logger.Info("WriteHTTP plugin stopped");
         }
 
-        public void Write(MetricValue metric)
+        public void Write(CollectableValue value)
         {
-            string payload = "[" + metric.GetMetricJsonStr() + "]";
+            // This Write Plugin only knows about metrics
+            if (!(value is MetricValue))
+                return;
+
+            string payload = "[" + value.getJSON() + "]";
             Logger.Debug("WriteHTTPPlugin: {0}", payload);
 
             string result = "";
