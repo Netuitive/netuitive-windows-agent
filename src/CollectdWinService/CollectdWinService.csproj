@@ -118,10 +118,11 @@
   <ItemGroup>
     <Compile Include="Aggregator.cs" />
     <Compile Include="AmqpPlugin.cs" />
+    <Compile Include="CollectableValue.cs" />
     <Compile Include="ConsolePlugin.cs" />
     <Compile Include="Histogram.cs" />
     <Compile Include="MetricsCollector.cs" />
-    <Compile Include="MetricsPlugin.cs" />
+    <Compile Include="Plugin.cs" />
     <Compile Include="CollectdWinService.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -135,6 +136,7 @@
     <Compile Include="StatsdPlugin.cs" />
     <Compile Include="TypesDB.cs" />
     <Compile Include="Util.cs" />
+    <Compile Include="WindowsAttributesPlugin.cs" />
     <Compile Include="WindowsPerformanceCounterPlugin.cs" />
     <Compile Include="WriteNetuitivePlugin.cs" />
     <Compile Include="WriteHTTPPlugin.cs" />

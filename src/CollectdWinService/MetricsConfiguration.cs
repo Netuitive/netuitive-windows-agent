@@ -48,6 +48,17 @@ namespace BloombergFLP.CollectdWin
             set { base["WriteNetuitive"] = value; }
         }
 
+        [ConfigurationProperty("WindowsEnvironmentVariables", IsRequired = false)]
+        [ConfigurationCollection(typeof(WindowsEnvironmentVariableCollection), AddItemName = "EnvironmentVariable")]
+        public WindowsEnvironmentVariableCollection EnvironmentVariableList
+        {
+            get { return (WindowsEnvironmentVariableCollection)base["WindowsEnvironmentVariables"]; }
+            set { base["WindowsEnvironmentVariables"] = value; }
+        }
+
+
+
+
         [ConfigurationProperty("WindowsPerformanceCounters", IsRequired = false)]
         public WindowsPerformanceCountersConfig WindowsPerformanceCounters
         {
@@ -162,6 +173,50 @@ namespace BloombergFLP.CollectdWin
                 set { base["type"] = value; }
             }
         
+        }
+
+        public sealed class EnvironmentVariableConfig : ConfigurationElement
+        {
+            [ConfigurationProperty("Name", IsRequired = true)]
+            public String Name
+            {
+                get { return (string)base["Name"]; }
+                set { base["Name"] = value; }
+            }
+
+            [ConfigurationProperty("Value", IsRequired = true)]
+            public String Value
+            {
+                get { return (string)base["Value"]; }
+                set { base["Value"] = value; }
+            }
+
+
+
+            [ConfigurationProperty("Counters", IsRequired = false)]
+            [ConfigurationCollection(typeof(CounterConfigCollection), AddItemName = "Counter")]
+            public CounterConfigCollection Counters
+            {
+                get { return (CounterConfigCollection)base["Counters"]; }
+                set { base["Counters"] = value; }
+            }
+
+
+        }
+
+        public class WindowsEnvironmentVariableCollection : ConfigurationElementCollection
+        {
+
+            protected override ConfigurationElement CreateNewElement()
+            {
+                return new EnvironmentVariableConfig();
+            }
+
+            protected override object GetElementKey(ConfigurationElement element)
+            {
+                var envVariableConfig = (EnvironmentVariableConfig)element;
+                return (envVariableConfig.Name + "_" + envVariableConfig.Value);
+            }
         }
 
         
