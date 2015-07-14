@@ -13,8 +13,8 @@ namespace BloombergFLP.CollectdWin
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly Aggregator _aggregator;
         private readonly int _interval;
-        private readonly Queue<MetricValue> _metricValueQueue;
-        private readonly IList<IMetricsPlugin> _plugins;
+        private readonly Queue<CollectableValue> _collectedValueQueue;
+        private readonly IList<ICollectdPlugin> _plugins;
         private readonly Object _queueLock;
         private readonly int _timeout;
         private Thread _aggregatorThread;
@@ -50,14 +50,14 @@ namespace BloombergFLP.CollectdWin
 
             _aggregator = new Aggregator(_timeout, storeRates);
 
-            _metricValueQueue = new Queue<MetricValue>();
+            _collectedValueQueue = new Queue<CollectableValue>();
             _queueLock = new Object();
         }
 
         public void ConfigureAll()
         {
             Logger.Trace("ConfigureAll() begin");
-            foreach (IMetricsPlugin plugin in _plugins)
+            foreach (ICollectdPlugin plugin in _plugins)
                 plugin.Configure();
             Logger.Trace("ConfigureAll() return");
         }
@@ -65,7 +65,7 @@ namespace BloombergFLP.CollectdWin
         public void StartAll()
         {
             Logger.Trace("StartAll() begin");
-            foreach (IMetricsPlugin plugin in _plugins)
+            foreach (ICollectdPlugin plugin in _plugins)
                 plugin.Start();
 
             _runWriteThread = true;
@@ -93,7 +93,7 @@ namespace BloombergFLP.CollectdWin
             _writeThread.Interrupt();
             _aggregatorThread.Interrupt();
 
-            foreach (IMetricsPlugin plugin in _plugins)
+            foreach (ICollectdPlugin plugin in _plugins)
                 plugin.Stop();
             Logger.Trace("StopAll() end");
         }
@@ -106,9 +106,9 @@ namespace BloombergFLP.CollectdWin
             {
                 try
                 {
-                    foreach (IMetricsPlugin plugin in _plugins)
+                    foreach (ICollectdPlugin plugin in _plugins)
                     {
-                        var readPlugin = plugin as IMetricsReadPlugin;
+                        var readPlugin = plugin as ICollectdReadPlugin;
                         if (readPlugin == null)
                         {
                             // skip if plugin is not a readplugin, it might be a writeplugin
@@ -116,24 +116,24 @@ namespace BloombergFLP.CollectdWin
                         }
 
                         double start = Util.GetNow();
-                        IList<MetricValue> metricValues = readPlugin.Read();
+                        IList<CollectableValue> collectedValues = readPlugin.Read();
                         double end = Util.GetNow();
 
-                        if (metricValues == null || !metricValues.Any())
+                        if (collectedValues == null || !collectedValues.Any())
                             continue;
 
-                        Logger.Debug("Read {0} metrics in {1}ms", metricValues.Count, end - start);
+                        Logger.Debug("Read {0} items in {1}ms", collectedValues.Count, end - start);
 
                         lock (_queueLock)
                         {
-                            foreach (MetricValue metric in metricValues)
+                            foreach (CollectableValue metric in collectedValues)
                             {
-                                _metricValueQueue.Enqueue(metric);
-                                while (_metricValueQueue.Count >= MaxQueueSize)
+                                _collectedValueQueue.Enqueue(metric);
+                                while (_collectedValueQueue.Count >= MaxQueueSize)
                                 {
                                     // When queue size grows above the Max limit, 
                                     // old entries are removed
-                                    _metricValueQueue.Dequeue();
+                                    _collectedValueQueue.Dequeue();
                                     if ((++numMetricsDropped%1000) == 0)
                                     {
                                         Logger.Error(
@@ -146,7 +146,7 @@ namespace BloombergFLP.CollectdWin
                     }
                     Thread.Sleep(_interval*1000);
                 }
-                catch (ThreadInterruptedException ex)
+                catch (ThreadInterruptedException)
                 {
                     Logger.Info("Read thread interrupted");
                 }
@@ -169,35 +169,39 @@ namespace BloombergFLP.CollectdWin
             {
                 try
                 {
-                    while (_metricValueQueue.Count > 0)
+                    while (_collectedValueQueue.Count > 0)
                     {
-                        MetricValue metricValue = null;
+                        CollectableValue collectedValue = null;
                         lock (_queueLock)
                         {
-                            if (_metricValueQueue.Count > 0)
-                                metricValue = _metricValueQueue.Dequeue();
+                            if (_collectedValueQueue.Count > 0)
+                                collectedValue = _collectedValueQueue.Dequeue();
                         }
-                        if (metricValue != null)
+                        if (collectedValue != null)
                         {
-                            metricValue.Interval = _interval;
+                            collectedValue.Interval = _interval;
 
-                            _aggregator.Aggregate(ref metricValue);
-
-                            foreach (IMetricsPlugin plugin in _plugins)
+                            if (collectedValue is MetricValue)
                             {
-                                var writePlugin = plugin as IMetricsWritePlugin;
+                                MetricValue metricValue = (MetricValue)collectedValue;
+                                _aggregator.Aggregate(ref metricValue);
+                            }
+
+                            foreach (ICollectdPlugin plugin in _plugins)
+                            {
+                                var writePlugin = plugin as ICollectdWritePlugin;
                                 if (writePlugin == null)
                                 {
                                     // skip if plugin is not a writeplugin, it might be a readplugin
                                     continue;
                                 }
-                                writePlugin.Write(metricValue);
+                                writePlugin.Write(collectedValue);
                             }
                         }
                     }
                     Thread.Sleep(_interval*1000);
                 }
-                catch (ThreadInterruptedException ex)
+                catch (ThreadInterruptedException)
                 {
                     Logger.Info("Write thread interrupted");
                 }
@@ -220,7 +224,7 @@ namespace BloombergFLP.CollectdWin
                     _aggregator.RemoveExpiredEntries();
                     Thread.Sleep(_timeout*1000);
                 }
-                catch (ThreadInterruptedException ex)
+                catch (ThreadInterruptedException)
                 {
                     Logger.Info("Aggregator thread interrupted");
                 }
