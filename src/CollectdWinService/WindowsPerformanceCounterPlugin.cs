@@ -89,11 +89,18 @@ namespace BloombergFLP.CollectdWin
 
                     foreach (string instance in instances)
                     {
+                        string instanceAlias = instance;
+                        if (instances.Length == 1)
+                        {
+                            // If there is just one instance then replace the instance name with the CollectdInstanceName - i.e., alias the instance
+                            instanceAlias = counter.CollectdPluginInstance;
+                        }
+
                         // Replace collectd_plugin_instance with the Instance got from counter
                         AddPerformanceCounter(counter.Category, counter.Name,
                             instance, counter.ScaleUpFactor,
                             counter.ScaleDownFactor, counter.CollectdPlugin,
-                            instance, counter.CollectdType,
+                            instanceAlias, counter.CollectdType,
                             counter.CollectdTypeInstance);
                     }
                 }
@@ -166,7 +173,7 @@ namespace BloombergFLP.CollectdWin
         {
             string logstr =
                 string.Format(new FixedLengthFormatter(), 
-                    "Category={0}, Counter={1}, Instance={2}, CollectdPlugin={3}, CollectdPluginInstance={4}, CollectdType={5}, CollectdTypeInstance={6}, ScaleUpFactor={7}, ScaleDownFactor={8}",
+                    "Category={0} Counter={1} Instance={2} CollectdPlugin={3} CollectdPluginInstance={4} CollectdType={5} CollectdTypeInstance={6} ScaleUpFactor={7} ScaleDownFactor={8}",
                     category, names, instance, collectdPlugin, collectdPluginInstance,
                     collectdType, collectdTypeInstance, scaleUpFactor, scaleDownFactor);
 

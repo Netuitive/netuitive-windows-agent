@@ -111,7 +111,7 @@ namespace Netuitive.CollectdWin
                 MetricValue metric = (MetricValue)value;
                 string metricId = metric.PluginName;
                 if (metric.PluginInstanceName.Length > 0)
-                    metricId += "." + metric.PluginInstanceName;
+                    metricId += "." + metric.PluginInstanceName.Replace(".", "_");
                 if (metric.TypeInstanceName.Length > 0)
                     metricId += "." + metric.TypeInstanceName;
 
