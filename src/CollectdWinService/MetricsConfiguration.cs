@@ -142,37 +142,43 @@ namespace BloombergFLP.CollectdWin
 
         public sealed class WriteHTTPConfig : ConfigurationElement
         {
-            [ConfigurationProperty("url", IsRequired = true)]
-            public String url
+            [ConfigurationProperty("Url", IsRequired = true)]
+            public String Url
             {
-                get { return (string)base["url"]; }
-                set { base["url"] = value; }
+                get { return (string)base["Url"]; }
+                set { base["Url"] = value; }
             }
         }
 
         public sealed class WriteNetuitiveConfig : ConfigurationElement
         {
-            [ConfigurationProperty("url", IsRequired = true)]
-            public String url
+            [ConfigurationProperty("Url", IsRequired = true)]
+            public String Url
             {
-                get { return (string)base["url"]; }
-                set { base["url"] = value; }
+                get { return (string)base["Url"]; }
+                set { base["Url"] = value; }
             }
 
-            [ConfigurationProperty("location", IsRequired = false)]
-            public String location
+            [ConfigurationProperty("Location", IsRequired = false)]
+            public String Location
             {
-                get { return (string)base["location"]; }
-                set { base["location"] = value; }
+                get { return (string)base["Location"]; }
+                set { base["Location"] = value; }
             }
 
-            [ConfigurationProperty("type", IsRequired = false)]
-            public String type
+            [ConfigurationProperty("Type", IsRequired = false)]
+            public String Type
             {
-                get { return (string)base["type"]; }
-                set { base["type"] = value; }
+                get { return (string)base["Type"]; }
+                set { base["Type"] = value; }
             }
-        
+            [ConfigurationProperty("PayloadSize", IsRequired = false)]
+            public int PayloadSize
+            {
+                get { return (int)base["PayloadSize"]; }
+                set { base["PayloadSize"] = value; }
+            }
+
         }
 
         public sealed class EnvironmentVariableConfig : ConfigurationElement
@@ -200,8 +206,6 @@ namespace BloombergFLP.CollectdWin
                 get { return (CounterConfigCollection)base["Counters"]; }
                 set { base["Counters"] = value; }
             }
-
-
         }
 
         public class WindowsEnvironmentVariableCollection : ConfigurationElementCollection
