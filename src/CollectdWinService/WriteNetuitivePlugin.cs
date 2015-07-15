@@ -12,7 +12,7 @@ namespace Netuitive.CollectdWin
     internal class WriteNetuitivePlugin : ICollectdWritePlugin
     {
 
-        private const string NetuitiveMetricFormat = @"{{""id"":""{0}"", ""unit"":""{1}""}}";
+        private const string NetuitiveMetricFormat = @"{{""id"":""{0}"", ""unit"":""{1}"", ""name"":""{2}""}}";
 
         private const string NetuitiveSampleFormat = @"{{""metricId"":""{0}"", ""timestamp"":{1}, ""val"":{2}}}";
 
@@ -118,7 +118,7 @@ namespace Netuitive.CollectdWin
                 if (metric.Values.Length == 1)
                 {
                     // Simple case - just one metric in type
-                    metricList.Add(string.Format(NetuitiveMetricFormat, metricId, metric.TypeName));
+                    metricList.Add(string.Format(NetuitiveMetricFormat, metricId, metric.TypeName, metricId));
                     sampleList.Add(string.Format(NetuitiveSampleFormat, metricId, (long)metric.Epoch * 1000, metric.Values[0]));
                 }
                 else if (metric.Values.Length > 1)
@@ -135,7 +135,7 @@ namespace Netuitive.CollectdWin
                         foreach (DataSource ds in dsList)
                         {
                             // Include the Types.db suffix in the metric name
-                            metricList.Add(string.Format(NetuitiveMetricFormat, metricId, metric.TypeName));
+                            metricList.Add(string.Format(NetuitiveMetricFormat, metricId, metric.TypeName, metricId));
                             sampleList.Add(string.Format(NetuitiveSampleFormat, metricId + "." + ds.Name, (long)metric.Epoch * 1000, metric.Values[ix++]));
                         }
                     }
