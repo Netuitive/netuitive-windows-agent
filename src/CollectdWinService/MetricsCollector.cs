@@ -171,20 +171,25 @@ namespace BloombergFLP.CollectdWin
                 {
                     while (_collectedValueQueue.Count > 0)
                     {
-                        CollectableValue collectedValue = null;
+                        // Transfer current queue contents to working list
+                        // Individual write plugins can choose how to handle the list of collectable values.
+                        Queue<CollectableValue> collectedValues = new Queue<CollectableValue>();
                         lock (_queueLock)
                         {
-                            if (_collectedValueQueue.Count > 0)
-                                collectedValue = _collectedValueQueue.Dequeue();
-                        }
-                        if (collectedValue != null)
-                        {
-                            collectedValue.Interval = _interval;
-
-                            if (collectedValue is MetricValue)
+                            while (_collectedValueQueue.Count > 0)
                             {
-                                MetricValue metricValue = (MetricValue)collectedValue;
-                                _aggregator.Aggregate(ref metricValue);
+                                collectedValues.Enqueue(_collectedValueQueue.Dequeue());
+                            }
+                        }
+                        if (collectedValues.Count > 0) {
+                            foreach (CollectableValue collectedValue in collectedValues)
+                            {
+                                collectedValue.Interval = _interval;
+                                if (collectedValue is MetricValue)
+                                {
+                                    MetricValue metricValue = (MetricValue)collectedValue;
+                                    _aggregator.Aggregate(ref metricValue);
+                                }
                             }
 
                             foreach (ICollectdPlugin plugin in _plugins)
@@ -195,7 +200,7 @@ namespace BloombergFLP.CollectdWin
                                     // skip if plugin is not a writeplugin, it might be a readplugin
                                     continue;
                                 }
-                                writePlugin.Write(collectedValue);
+                                writePlugin.Write(collectedValues);
                             }
                         }
                     }

@@ -2,6 +2,7 @@
 using NLog;
 using System.Configuration;
 using System.Net;
+using System.Collections.Generic;
 
 namespace BloombergFLP.CollectdWin
 {
@@ -18,7 +19,7 @@ namespace BloombergFLP.CollectdWin
                 throw new Exception("Cannot get configuration section : CollectdWinConfig");
             }
 
-            string url = config.WriteHTTP.url;
+            string url = config.WriteHTTP.Url;
             Logger.Info("Posting to: {0}", url);
 
             _url = url;
@@ -51,6 +52,14 @@ namespace BloombergFLP.CollectdWin
                 result = client.UploadString(_url, "POST", payload);
             }
             Logger.Debug("response: {0}", result);
+        }
+
+        public void Write(Queue<CollectableValue> values)
+        {
+            foreach (CollectableValue value in values)
+            {
+                Write(value);
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Configuration;
 using System.Text;
 using NLog;
 using RabbitMQ.Client;
+using System.Collections.Generic;
 
 namespace BloombergFLP.CollectdWin
 {
@@ -58,6 +59,14 @@ namespace BloombergFLP.CollectdWin
             Logger.Trace("CloseConnection() begin");
             CloseConnection();
             Logger.Info("Amqp plugin stopped");
+        }
+        
+        public void Write(Queue<CollectableValue> values)
+        {
+            foreach (CollectableValue value in values)
+            {
+                Write(value);
+            }
         }
 
         public void Write(CollectableValue value)

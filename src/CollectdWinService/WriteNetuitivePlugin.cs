@@ -18,19 +18,19 @@ namespace Netuitive.CollectdWin
 
 
         private const string NetuitiveJsonFormat =
-         @"[{{""type"": ""{0}"", ""id"":""{1}"", ""name"":""{2}"", ""location"":""{3}""" + 
+         @"{{""type"": ""{0}"", ""id"":""{1}"", ""name"":""{2}"", ""location"":""{3}""" + 
          @", ""metrics"":[{4}]" +  
          @", ""samples"":[{5}]" +
          @", ""attributes"":[{6}]" + 
-        // @", ""attributes"":[{""name"":""testattr"",""value"":""testattrval""}]" + 
         // @", ""tags"": [{""name"":""testtag"", ""value"":""testtagval""}]" + 
-         @"}}] ";
+         @"}} ";
 
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private string _url;
         private string _location;
         private string _elementType;
+        private int _payloadSize;
 
         public void Configure()
         {
@@ -40,14 +40,14 @@ namespace Netuitive.CollectdWin
                 throw new Exception("Cannot get configuration section : CollectdWinConfig");
             }
 
-            string url = config.WriteNetuitive.url;
+            string url = config.WriteNetuitive.Url;
             Logger.Info("Posting to: {0}", url);
 
             _url = url;
 
-            _location = config.WriteNetuitive.location;
+            _location = config.WriteNetuitive.Location;
 
-            string type = config.WriteNetuitive.type;
+            string type = config.WriteNetuitive.Type;
             if (type == null || type.Trim().Length == 0)
             {
                 _elementType = "WINSRV";
@@ -56,7 +56,15 @@ namespace Netuitive.CollectdWin
             {
                 _elementType = type;
             }
+            Logger.Info("Element type: {0}", _elementType);
 
+            _payloadSize = config.WriteNetuitive.PayloadSize;
+            if (_payloadSize < 1)
+                _payloadSize = 99999;
+            else if (_payloadSize == 0)
+                _payloadSize = 25;
+
+            Logger.Info("Maximum payload size: {0}", _payloadSize);
 
         }
 
@@ -70,11 +78,29 @@ namespace Netuitive.CollectdWin
             Logger.Info("WriteNetuitive plugin stopped");
         }
 
-        public void Write(CollectableValue value)
+        public void Write(Queue<CollectableValue> values)
         {
-            string payload = GeNetuitiveJsonStr(value);
+            // Split the complete list into configured bathe
+            while (values.Count > 0)
+            {
+                List<string> jsonParts = new List<string>();
+                int counter = 0;
+                while (values.Count > 0 && counter++ < _payloadSize)
+                {
+                    CollectableValue value = values.Dequeue();
+                    jsonParts.Add(GeNetuitiveJsonStr(value));
+                }
+                string payload = "[" + string.Join(",", jsonParts.ToArray()) + "]";
+                PostToNetuitive(payload);
+            }
+
+
+        }
+
+        private void PostToNetuitive(string payload)
+        {
             Logger.Debug("WriteNetuitive: {0}", payload);
-            
+
             string result = "";
             try
             {
@@ -87,12 +113,19 @@ namespace Netuitive.CollectdWin
             catch (System.Net.WebException ex)
             {
                 Exception baseex = ex.GetBaseException();
-                if (baseex as ThreadInterruptedException != null) {
+                if (baseex as ThreadInterruptedException != null)
+                {
                     throw baseex;
-                } else
+                }
+                else
                     Logger.Error("Error posting data: {0}", payload, ex);
             }
             Logger.Debug("response: {0}", result);
+        }
+        public void Write(CollectableValue value)
+        {
+            string payload = "[" + GeNetuitiveJsonStr(value) + "]";
+            PostToNetuitive(payload);
         }
 
         public string GeNetuitiveJsonStr(CollectableValue value)

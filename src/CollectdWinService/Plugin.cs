@@ -18,6 +18,8 @@ namespace BloombergFLP.CollectdWin
     internal interface ICollectdWritePlugin : ICollectdPlugin
     {
         void Write(CollectableValue value);
+
+        void Write(Queue<CollectableValue> values);
     }
 
 

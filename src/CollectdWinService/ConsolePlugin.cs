@@ -1,5 +1,6 @@
 ﻿using System;
 using NLog;
+using System.Collections.Generic;
 
 namespace BloombergFLP.CollectdWin
 {
@@ -25,6 +26,14 @@ namespace BloombergFLP.CollectdWin
         public void Write(CollectableValue value)
         {
             Console.WriteLine("ConsolePlugin: {0}", value.getJSON());
+        }
+
+        public void Write(Queue<CollectableValue> values)
+        {
+            foreach (CollectableValue value in values)
+            {
+                Write(value);
+            }
         }
     }
 }
