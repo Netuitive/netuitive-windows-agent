@@ -49,7 +49,7 @@ namespace Netuitive.CollectdWin
             //Rough first pass
             //TODO - handle multiple metrics
             //TODO - check type 
-            string bucket = metric.PluginName;
+            string bucket = metric.HostName + "." + metric.PluginName;
             if (metric.PluginInstanceName.Length > 0)
                 bucket += "." + metric.PluginInstanceName;
 
