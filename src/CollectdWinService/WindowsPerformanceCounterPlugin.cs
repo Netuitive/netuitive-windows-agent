@@ -16,6 +16,7 @@ namespace BloombergFLP.CollectdWin
         public string Instance;
         public uint ScaleDownFactor;
         public uint ScaleUpFactor;
+        public string[] FriendlyNames;
     }
 
     internal class WindowsPerformanceCounterPlugin : ICollectdReadPlugin
@@ -150,7 +151,9 @@ namespace BloombergFLP.CollectdWin
                         PluginInstanceName = metric.CollectdPluginInstance,
                         TypeName = metric.CollectdType,
                         TypeInstanceName = metric.CollectdTypeInstance,
-                        Values = vals.ToArray()
+                        Values = vals.ToArray(),
+                        FriendlyNames = metric.FriendlyNames
+
                     };
 
                     TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
@@ -182,8 +185,17 @@ namespace BloombergFLP.CollectdWin
                 var metric = new Metric();
                 string[] counterList = names.Split(',');
                 metric.Counters = new List<PerformanceCounter>();
+                metric.FriendlyNames = new string[counterList.Length];
+                int ix = 0;
                 foreach (string ctr in counterList)
+                {
                     metric.Counters.Add(new PerformanceCounter(category, ctr.Trim(), instance));
+                    string friendlyName = ctr.Trim();
+                    if (instance.Length > 0)
+                        friendlyName += " (" + instance + ")";
+                    metric.FriendlyNames[ix++] = friendlyName;
+                }
+
                 metric.Category = category;
                 metric.Instance = instance;
                 metric.CounterName = names;
@@ -193,7 +205,6 @@ namespace BloombergFLP.CollectdWin
                 metric.CollectdPluginInstance = collectdPluginInstance;
                 metric.CollectdType = collectdType;
                 metric.CollectdTypeInstance = collectdTypeInstance;
-
                 _metrics.Add(metric);
                 Logger.Info("Added Performance COUNTER : {0}", logstr);
             }

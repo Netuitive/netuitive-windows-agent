@@ -33,6 +33,7 @@ namespace BloombergFLP.CollectdWin
 
 
         public double[] Values { get; set; }
+        public string[] FriendlyNames { get; set; }
 
         public string Key()
         {

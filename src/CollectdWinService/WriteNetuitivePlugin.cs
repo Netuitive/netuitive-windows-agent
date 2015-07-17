@@ -151,7 +151,7 @@ namespace Netuitive.CollectdWin
                 if (metric.Values.Length == 1)
                 {
                     // Simple case - just one metric in type
-                    metricList.Add(string.Format(NetuitiveMetricFormat, metricId, metric.TypeName, metricId));
+                    metricList.Add(string.Format(NetuitiveMetricFormat, metricId, metric.TypeName, metric.FriendlyNames[0]));
                     sampleList.Add(string.Format(NetuitiveSampleFormat, metricId, (long)metric.Epoch * 1000, metric.Values[0]));
                 }
                 else if (metric.Values.Length > 1)
@@ -168,8 +168,9 @@ namespace Netuitive.CollectdWin
                         foreach (DataSource ds in dsList)
                         {
                             // Include the Types.db suffix in the metric name
-                            metricList.Add(string.Format(NetuitiveMetricFormat, metricId, metric.TypeName, metricId));
-                            sampleList.Add(string.Format(NetuitiveSampleFormat, metricId + "." + ds.Name, (long)metric.Epoch * 1000, metric.Values[ix++]));
+                            metricList.Add(string.Format(NetuitiveMetricFormat, metricId, metric.TypeName, metric.FriendlyNames[ix]));
+                            sampleList.Add(string.Format(NetuitiveSampleFormat, metricId + "." + ds.Name, (long)metric.Epoch * 1000, metric.Values[ix]));
+                            ix++;
                         }
                     }
                 }
