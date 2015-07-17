@@ -14,10 +14,6 @@ namespace Netuitive.CollectdWin
     {
         public string name;
         public string variableName;
-//        public string CollectdPlugin, CollectdPluginInstance, CollectdType, CollectdTypeInstance;
-//        public string CounterName;
-//        public IList<PerformanceCounter> Counters;
-//        public string Instance;
     }
 
     internal class WindowsAttributesPlugin : ICollectdReadPlugin
@@ -51,6 +47,7 @@ namespace Netuitive.CollectdWin
                     variableName = attr.Value
                 };
                 _attributes.Add(attribute);
+                Logger.Info("Added attribute {0}: {1}", attr.Name, attr.Value);
 
             }
             Logger.Info("WindowsAttributes plugin configured");
