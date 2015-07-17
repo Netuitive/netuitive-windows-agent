@@ -1,5 +1,7 @@
-#CollectdWin
+#Netuitive-CollectdWin
 
-CollectdWin is a MS Windows service which collects, aggregates and publishes both application and system metrics periodically. These application and system metrics can be used for performance analysis and capacity planning. CollectdWin is very similar to Collectd (https://collectd.org), it was developed because Collectd doesnot support Windows.
+CollectdWin is a MS Windows service which collects, aggregates and publishes windows performance counters and attributes. CollectdWin is similar in concept and design to Collectd (https://collectd.org).
 
-For more info, refer [CollectdWin docs](../../wiki)
+This version was forked to add Write Netuitive and other plugins.
+
+For more info, see the [wiki](../../wiki)
