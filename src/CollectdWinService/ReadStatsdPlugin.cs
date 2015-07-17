@@ -7,7 +7,7 @@ using NLog;
 
 namespace BloombergFLP.CollectdWin
 {
-    internal class StatsdPlugin : ICollectdReadPlugin
+    internal class ReadStatsdPlugin : ICollectdReadPlugin
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private bool _delCounters;
@@ -24,7 +24,7 @@ namespace BloombergFLP.CollectdWin
         private bool _timerSum;
         private bool _timerUpper;
 
-        public StatsdPlugin()
+        public ReadStatsdPlugin()
         {
             _running = false;
         }
@@ -37,26 +37,26 @@ namespace BloombergFLP.CollectdWin
                 throw new Exception("Cannot get configuration section : CollectdWinConfig");
             }
 
-            _port = config.Statsd.Port;
+            _port = config.ReadStatsd.Port;
 
-            _delCounters = config.Statsd.DeleteCache.Counters;
-            _delTimers = config.Statsd.DeleteCache.Timers;
-            _delGauges = config.Statsd.DeleteCache.Gauges;
-            _delSets = config.Statsd.DeleteCache.Sets;
+            _delCounters = config.ReadStatsd.DeleteCache.Counters;
+            _delTimers = config.ReadStatsd.DeleteCache.Timers;
+            _delGauges = config.ReadStatsd.DeleteCache.Gauges;
+            _delSets = config.ReadStatsd.DeleteCache.Sets;
 
-            _timerLower = config.Statsd.Timer.Lower;
-            _timerUpper = config.Statsd.Timer.Upper;
-            _timerSum = config.Statsd.Timer.Sum;
-            _timerCount = config.Statsd.Timer.Count;
+            _timerLower = config.ReadStatsd.Timer.Lower;
+            _timerUpper = config.ReadStatsd.Timer.Upper;
+            _timerSum = config.ReadStatsd.Timer.Sum;
+            _timerCount = config.ReadStatsd.Timer.Count;
             _percentiles =
-                (from CollectdWinConfig.StatsdConfig.PercentileConfig percentileConfig in
-                    config.Statsd.Timer.Percentiles
+                (from CollectdWinConfig.ReadStatsdConfig.PercentileConfig percentileConfig in
+                     config.ReadStatsd.Timer.Percentiles
                     select percentileConfig.Value).ToArray();
 
             _statsdAggregator = new StatsdAggregator(_delCounters, _delTimers, _delGauges, _delSets, _timerLower,
                 _timerUpper,
                 _timerSum, _timerCount, _percentiles);
-            Logger.Info("Statsd plugin configured");
+            Logger.Info("ReadStatsd plugin configured");
         }
 
         public void Start()
@@ -69,7 +69,7 @@ namespace BloombergFLP.CollectdWin
             _statsdThread.Start();
 
             _running = true;
-            Logger.Info("Statsd plugin started");
+            Logger.Info("ReadStatsd plugin started");
         }
 
         public void Stop()
@@ -80,13 +80,12 @@ namespace BloombergFLP.CollectdWin
             _statsdThread.Interrupt();
 
             _running = false;
-            Logger.Info("Statsd plugin stopped");
+            Logger.Info("ReadStatsd plugin stopped");
         }
 
         public IList<CollectableValue> Read()
         {
             return (IList<CollectableValue>)(_statsdAggregator.Read());
-//            return (_statsdAggregator.Read());
         }
 
         public void HandleMessage(string message)
