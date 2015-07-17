@@ -133,11 +133,12 @@
     <Compile Include="StatsdAggregator.cs" />
     <Compile Include="StatsdListener.cs" />
     <Compile Include="StatsdMetrics.cs" />
-    <Compile Include="StatsdPlugin.cs" />
+    <Compile Include="ReadStatsdPlugin.cs" />
     <Compile Include="TypesDB.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="WindowsAttributesPlugin.cs" />
     <Compile Include="WindowsPerformanceCounterPlugin.cs" />
+    <Compile Include="WriteStatsdPlugin.cs" />
     <Compile Include="WriteNetuitivePlugin.cs" />
     <Compile Include="WriteHTTPPlugin.cs" />
   </ItemGroup>

@@ -20,11 +20,11 @@ namespace BloombergFLP.CollectdWin
             set { base["PluginRegistry"] = value; }
         }
 
-        [ConfigurationProperty("Statsd", IsRequired = false)]
-        public StatsdConfig Statsd
+        [ConfigurationProperty("ReadStatsd", IsRequired = false)]
+        public ReadStatsdConfig ReadStatsd
         {
-            get { return (StatsdConfig) base["Statsd"]; }
-            set { base["Statsd"] = value; }
+            get { return (ReadStatsdConfig)base["ReadStatsd"]; }
+            set { base["ReadStatsd"] = value; }
         }
 
         [ConfigurationProperty("Amqp", IsRequired = false)]
@@ -46,6 +46,13 @@ namespace BloombergFLP.CollectdWin
         {
             get { return (WriteNetuitiveConfig)base["WriteNetuitive"]; }
             set { base["WriteNetuitive"] = value; }
+        }
+
+        [ConfigurationProperty("WriteStatsd", IsRequired = false)]
+        public WriteStatsdConfig WriteStatsd
+        {
+            get { return (WriteStatsdConfig)base["WriteStatsd"]; }
+            set { base["WriteStatsd"] = value; }
         }
 
         [ConfigurationProperty("WindowsEnvironmentVariables", IsRequired = false)]
@@ -147,6 +154,22 @@ namespace BloombergFLP.CollectdWin
             {
                 get { return (string)base["Url"]; }
                 set { base["Url"] = value; }
+            }
+        }
+
+        public sealed class WriteStatsdConfig : ConfigurationElement
+        {
+            [ConfigurationProperty("Host", IsRequired = true)]
+            public String Host
+            {
+                get { return (string)base["Host"]; }
+                set { base["Host"] = value; }
+            }
+            [ConfigurationProperty("Port", IsRequired = true)]
+            public int Port
+            {
+                get { return (int)base["Port"]; }
+                set { base["Port"] = value; }
             }
         }
 
@@ -380,7 +403,7 @@ namespace BloombergFLP.CollectdWin
             }
         }
 
-        public sealed class StatsdConfig : ConfigurationElement
+        public sealed class ReadStatsdConfig : ConfigurationElement
         {
             [ConfigurationProperty("Host", IsRequired = false)]
             public string Host
