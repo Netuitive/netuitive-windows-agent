@@ -171,6 +171,13 @@ namespace BloombergFLP.CollectdWin
                 get { return (int)base["Port"]; }
                 set { base["Port"] = value; }
             }
+
+            [ConfigurationProperty("Prefix", IsRequired = false)]
+            public String Prefix
+            {
+                get { return (string)base["Prefix"]; }
+                set { base["Prefix"] = value; }
+            }        
         }
 
         public sealed class WriteNetuitiveConfig : ConfigurationElement

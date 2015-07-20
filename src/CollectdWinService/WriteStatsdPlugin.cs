@@ -13,6 +13,7 @@ namespace Netuitive.CollectdWin
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private string _host;
         private int _port;
+        private string _prefix;
 
         public void Configure()
         {
@@ -23,8 +24,10 @@ namespace Netuitive.CollectdWin
             }
 
             _host = config.WriteStatsd.Host;
+            _prefix = config.WriteStatsd.Prefix;
             _port = config.WriteStatsd.Port;
             Logger.Info("Posting to: {0}:{1}", _host, _port);
+            Logger.Info("Namespace prefix: {0}", _prefix, _port);
 
 
         }
@@ -49,7 +52,11 @@ namespace Netuitive.CollectdWin
             //Rough first pass
             //TODO - handle multiple metrics
             //TODO - check type 
-            string bucket = metric.HostName + "." + metric.PluginName;
+            string bucket = "";
+            if (_prefix.Trim().Length > 0)
+                bucket += _prefix.Trim() + ".";
+            
+            bucket += metric.HostName + "." + metric.PluginName;
             if (metric.PluginInstanceName.Length > 0)
                 bucket += "." + metric.PluginInstanceName;
 
