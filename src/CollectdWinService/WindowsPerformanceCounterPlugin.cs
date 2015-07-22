@@ -14,8 +14,8 @@ namespace BloombergFLP.CollectdWin
         public string CounterName;
         public IList<PerformanceCounter> Counters;
         public string Instance;
-        public uint ScaleDownFactor;
-        public uint ScaleUpFactor;
+        public double Multiplier;
+        public int DecimalPlaces;
         public string[] FriendlyNames;
     }
 
@@ -49,8 +49,8 @@ namespace BloombergFLP.CollectdWin
                 {
                     // Instance not specified 
                     AddPerformanceCounter(counter.Category, counter.Name,
-                        counter.Instance, counter.ScaleUpFactor,
-                        counter.ScaleDownFactor, counter.CollectdPlugin,
+                        counter.Instance, counter.Multiplier,
+                        counter.DecimalPlaces, counter.CollectdPlugin,
                         counter.CollectdPluginInstance, counter.CollectdType,
                         counter.CollectdTypeInstance);
                 }
@@ -106,8 +106,8 @@ namespace BloombergFLP.CollectdWin
 
                         // Replace collectd_plugin_instance with the Instance got from counter
                         AddPerformanceCounter(counter.Category, counter.Name,
-                            instance, counter.ScaleUpFactor,
-                            counter.ScaleDownFactor, counter.CollectdPlugin,
+                            instance, counter.Multiplier,
+                            counter.DecimalPlaces, counter.CollectdPlugin,
                             instanceAlias, counter.CollectdType,
                             counter.CollectdTypeInstance);
                     }
@@ -137,17 +137,10 @@ namespace BloombergFLP.CollectdWin
                     foreach (PerformanceCounter ctr in metric.Counters)
                     {
                         double val = ctr.NextValue();
-                        if (metric.ScaleUpFactor > 0)
-                        {
-                            val = val * metric.ScaleUpFactor;
-                        }
-                        else
-                        {
-                            if (metric.ScaleDownFactor > 0)
-                            {
-                                val = val / metric.ScaleDownFactor;
-                            }
-                        }
+                        val = val * metric.Multiplier;
+
+                        if (metric.DecimalPlaces >= 0)
+                            val = Math.Round(val, metric.DecimalPlaces);
                         vals.Add(val);
                     }
 
@@ -177,15 +170,15 @@ namespace BloombergFLP.CollectdWin
             return (metricValueList);
         }
 
-        private void AddPerformanceCounter(string category, string names, string instance, uint scaleUpFactor,
-            uint scaleDownFactor, string collectdPlugin, string collectdPluginInstance, string collectdType,
+        private void AddPerformanceCounter(string category, string names, string instance, double multiplier,
+            int decimalPlaces, string collectdPlugin, string collectdPluginInstance, string collectdType,
             string collectdTypeInstance)
         {
             string logstr =
                 string.Format(new FixedLengthFormatter(), 
-                    "Category={0} Counter={1} Instance={2} CollectdPlugin={3} CollectdPluginInstance={4} CollectdType={5} CollectdTypeInstance={6} ScaleUpFactor={7} ScaleDownFactor={8}",
+                    "Category={0} Counter={1} Instance={2} CollectdPlugin={3} CollectdPluginInstance={4} CollectdType={5} CollectdTypeInstance={6} Multiplier={7} DecimalPlaces={8}",
                     category, names, instance, collectdPlugin, collectdPluginInstance,
-                    collectdType, collectdTypeInstance, scaleUpFactor, scaleDownFactor);
+                    collectdType, collectdTypeInstance, multiplier, decimalPlaces);
 
             try
             {
@@ -206,8 +199,8 @@ namespace BloombergFLP.CollectdWin
                 metric.Category = category;
                 metric.Instance = instance;
                 metric.CounterName = names;
-                metric.ScaleUpFactor = scaleUpFactor;
-                metric.ScaleDownFactor = scaleDownFactor;
+                metric.Multiplier = multiplier;
+                metric.DecimalPlaces = decimalPlaces;
                 metric.CollectdPlugin = collectdPlugin;
                 metric.CollectdPluginInstance = collectdPluginInstance;
                 metric.CollectdType = collectdType;

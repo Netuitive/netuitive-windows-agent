@@ -306,19 +306,19 @@ namespace BloombergFLP.CollectdWin
                 set { base["CollectdTypeInstance"] = value; }
             }
 
-            [ConfigurationProperty("ScaleUpFactor", IsRequired = false)]
-            public uint ScaleUpFactor
+            [ConfigurationProperty("Multiplier", IsRequired = false, DefaultValue=1.0)]
+            public double Multiplier
             {
-                get { return (uint) base["ScaleUpFactor"]; }
-                set { base["ScaleUpFactor"] = value; }
+                get { return (double)base["Multiplier"]; }
+                set { base["Multiplier"] = value; }
             }
 
-            [ConfigurationProperty("ScaleDownFactor", IsRequired = false)]
-            public uint ScaleDownFactor
+            [ConfigurationProperty("DecimalPlaces", IsRequired = false, DefaultValue = -1)]
+            public int DecimalPlaces
             {
-                get { return (uint) base["ScaleDownFactor"]; }
-                set { base["ScaleDownFactor"] = value; }
-            }
+                get { return (int)base["DecimalPlaces"]; }
+                set { base["DecimalPlaces"] = value; }
+            }        
         }
 
         public class CounterConfigCollection : ConfigurationElementCollection
