@@ -57,6 +57,7 @@ namespace BloombergFLP.CollectdWin
         public void ConfigureAll()
         {
             Logger.Trace("ConfigureAll() begin");
+            Logger.Info("Configuring plugins");
             foreach (ICollectdPlugin plugin in _plugins)
                 plugin.Configure();
             Logger.Trace("ConfigureAll() return");
@@ -65,6 +66,7 @@ namespace BloombergFLP.CollectdWin
         public void StartAll()
         {
             Logger.Trace("StartAll() begin");
+            Logger.Info("Starting plugins");
             foreach (ICollectdPlugin plugin in _plugins)
                 plugin.Start();
 

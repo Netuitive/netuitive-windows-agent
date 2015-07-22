@@ -32,6 +32,7 @@ namespace BloombergFLP.CollectdWin
         public virtual void StartService(params string[] args)
         {
             Logger.Trace("StartService() begin");
+            Logger.Info("----- Starting CollectdWinService -----");
             _metricsCollector = new MetricsCollector();
             _metricsCollector.ConfigureAll();
             _metricsCollector.StartAll();
@@ -42,6 +43,8 @@ namespace BloombergFLP.CollectdWin
         public virtual void StopService()
         {
             Logger.Trace("StopService() begin");
+            Logger.Info("----- Stopping CollectdWinService -----");
+
             _metricsCollector.StopAll();
             Logger.Trace("StopService() return");
         }

@@ -79,13 +79,20 @@ namespace BloombergFLP.CollectdWin
                     {
                         Logger.Error(string.Format("Failed to parse instance regular expression: category={0}, instance={1}, counter={2}", counter.Category, counter.Instance, counter.Name), ex);
                     }
+                    catch (InvalidOperationException ex)
+                    {
+                        if (ex.Message.ToLower().Contains("category does not exist")) {
+                            Logger.Warn(string.Format("Performance Counter not added: Category does not exist: {0}", counter.Category));
+                        } else 
+                            Logger.Error(string.Format("Could not initialise performance counter category: {0}, instance: {1}, counter: {2}", counter.Category, counter.Instance, counter.Name), ex);
+                    }
                     catch (Exception ex)
                     {
                         Logger.Error(string.Format("Could not initialise performance counter category: {0}", counter.Category), ex);
                     }
                     if (instances.Length == 0)
                     {
-                        Logger.Warn("No instances found for category: {0}", counter.Category);
+                        Logger.Warn("No instances matching category: {0}, instance: {1}", counter.Category, counter.Instance);
                     }
 
                     foreach (string instance in instances)
@@ -206,11 +213,18 @@ namespace BloombergFLP.CollectdWin
                 metric.CollectdType = collectdType;
                 metric.CollectdTypeInstance = collectdTypeInstance;
                 _metrics.Add(metric);
-                Logger.Info("Added Performance COUNTER : {0}", logstr);
+                Logger.Info("Added Performance counter : {0}", logstr);
             }
-            catch (Exception exp)
+            catch (InvalidOperationException ex)
             {
-                Logger.Error("Got exception : {0}, while adding performance counter: {1}", exp, logstr);
+                if (ex.Message.ToLower().Contains("category does not exist")) {
+                    Logger.Warn(string.Format("Performance Counter not added: Category does not exist: {0}", category));
+                } else 
+                    Logger.Error(string.Format("Could not initialise performance counter category: {0}, instance: {1}, counter: {2}", category, instance, names), ex);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(string.Format("Could not initialise performance counter category: {0}, instance: {1}, counter: {2}", category, instance, names), ex);
             }
         }
     }
