@@ -63,7 +63,7 @@ namespace Netuitive.CollectdWin
             bucket += "." + metric.TypeInstanceName;
 
             // Remove : and | from bucket names
-            bucket = bucket.Replace(":", "_").Replace("|", "_");
+            bucket = bucket.Replace(":", "_").Replace("|", "_").Replace(" ", "_");
             string payload = bucket + ":" + metric.Values[0] + "|g";
 
             if (metric.Values.Length > 1)
