@@ -59,7 +59,7 @@ namespace Netuitive.CollectdWin
             Logger.Info("Element type: {0}", _elementType);
 
             _payloadSize = config.WriteNetuitive.PayloadSize;
-            if (_payloadSize < 1)
+            if (_payloadSize < 0)
                 _payloadSize = 99999;
             else if (_payloadSize == 0)
                 _payloadSize = 25;
