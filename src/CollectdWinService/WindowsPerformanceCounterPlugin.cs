@@ -98,10 +98,17 @@ namespace BloombergFLP.CollectdWin
                     foreach (string instance in instances)
                     {
                         string instanceAlias = instance;
+
                         if (instances.Length == 1)
                         {
-                            // If there is just one instance then replace the instance name with the CollectdInstanceName - i.e., alias the instance
-                            instanceAlias = counter.CollectdPluginInstance;
+                            // There is just one instance
+                            // If this is because the regex was hardcoded then replace the instance name with the CollectdInstanceName - i.e., alias the instance
+                            // But if the regex contains wildcards then it is a fluke that there was a single match
+                            if (counter.Instance.IndexOf("?") < 0 && counter.Instance.IndexOf("*") < 0)
+                            {
+                                // No wildcards => this was hardcoded value.
+                                instanceAlias = counter.CollectdPluginInstance;
+                            }
                         }
 
                         // Replace collectd_plugin_instance with the Instance got from counter
