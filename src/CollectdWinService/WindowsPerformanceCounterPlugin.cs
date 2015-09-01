@@ -24,6 +24,8 @@ namespace BloombergFLP.CollectdWin
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly IList<Metric> _metrics;
         private string _hostName;
+        private int _reloadInterval;
+        private double _lastUpdated;
 
         public WindowsPerformanceCounterPlugin()
         {
@@ -40,19 +42,29 @@ namespace BloombergFLP.CollectdWin
 
             _hostName = Util.GetHostName();
 
-            _metrics.Clear();
+            // Set reload time
+            _reloadInterval = config.WindowsPerformanceCounters.ReloadInterval;
+            Logger.Info("Loading metric configuration. Reload interval: {0} sec", _reloadInterval);
 
+            _lastUpdated = Util.GetNow();
+
+            // Load the metrics - this checks for existence
+            _metrics.Clear();
+            int metricCounter = 0;
             foreach (CollectdWinConfig.CounterConfig counter in config.WindowsPerformanceCounters.Counters)
             {
 
                 if (counter.Instance == "")
                 {
                     // Instance not specified 
-                    AddPerformanceCounter(counter.Category, counter.Name,
+                    if (AddPerformanceCounter(counter.Category, counter.Name,
                         counter.Instance, counter.Multiplier,
                         counter.DecimalPlaces, counter.CollectdPlugin,
                         counter.CollectdPluginInstance, counter.CollectdType,
-                        counter.CollectdTypeInstance);
+                        counter.CollectdTypeInstance))
+                    {
+                        metricCounter++;
+                    }
                 }
                 else
                 {
@@ -112,15 +124,18 @@ namespace BloombergFLP.CollectdWin
                         }
 
                         // Replace collectd_plugin_instance with the Instance got from counter
-                        AddPerformanceCounter(counter.Category, counter.Name,
+                        if (AddPerformanceCounter(counter.Category, counter.Name,
                             instance, counter.Multiplier,
                             counter.DecimalPlaces, counter.CollectdPlugin,
                             instanceAlias, counter.CollectdType,
-                            counter.CollectdTypeInstance);
+                            counter.CollectdTypeInstance))
+                        {
+                            metricCounter++;
+                        }
                     }
                 }
             }
-            Logger.Info("WindowsPerformanceCounter plugin configured");
+            Logger.Info("WindowsPerformanceCounter plugin configured {0} metrics", metricCounter);
         }
 
         public void Start()
@@ -135,6 +150,13 @@ namespace BloombergFLP.CollectdWin
 
         public IList<CollectableValue> Read()
         {
+            // Check if it is time to reload the metric config
+            // We need to periodially reload the config in case new instances or new categories are available (e.g. due to cluster move)
+            if (Util.GetNow() - _lastUpdated >= _reloadInterval)
+            {
+                Configure();
+            }
+
             var metricValueList = new List<CollectableValue>();
             foreach (Metric metric in _metrics)
             {
@@ -177,7 +199,7 @@ namespace BloombergFLP.CollectdWin
             return (metricValueList);
         }
 
-        private void AddPerformanceCounter(string category, string names, string instance, double multiplier,
+        private Boolean AddPerformanceCounter(string category, string names, string instance, double multiplier,
             int decimalPlaces, string collectdPlugin, string collectdPluginInstance, string collectdType,
             string collectdTypeInstance)
         {
@@ -213,7 +235,8 @@ namespace BloombergFLP.CollectdWin
                 metric.CollectdType = collectdType;
                 metric.CollectdTypeInstance = collectdTypeInstance;
                 _metrics.Add(metric);
-                Logger.Info("Added Performance counter : {0}", logstr);
+                Logger.Debug("Added Performance counter : {0}", logstr);
+                return true;
             }
             catch (InvalidOperationException ex)
             {
@@ -221,10 +244,12 @@ namespace BloombergFLP.CollectdWin
                     Logger.Warn(string.Format("Performance Counter not added: Category does not exist: {0}", category));
                 } else 
                     Logger.Error(string.Format("Could not initialise performance counter category: {0}, instance: {1}, counter: {2}", category, instance, names), ex);
+                return false;
             }
             catch (Exception ex)
             {
                 Logger.Error(string.Format("Could not initialise performance counter category: {0}, instance: {1}, counter: {2}", category, instance, names), ex);
+                return false;
             }
         }
     }
