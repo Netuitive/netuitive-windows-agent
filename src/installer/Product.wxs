@@ -17,7 +17,7 @@
   <Product Name="$(var.ProductName)"
            Id="*"
            UpgradeCode="$(var.UpgradeCode)"
-           Manufacturer="Bloomberg LP"
+           Manufacturer="Netuitive"
            Version="$(var.Version)"
            Language="1033">
     <Package InstallerVersion="200"
@@ -28,10 +28,16 @@
     <Directory Id="TARGETDIR"
                Name="SourceDir">
       <Directory Id="$(var.PlatformProgramFilesFolder)">
-        <Directory Id="CollectdWin"
+        <Directory Id="INSTALLDIR"
                    Name="CollectdWin">
-          <Component Id="BloombergFLP.CollectdWinService"
+          <Component Id="Netuitive.CollectdWinService"
                      Guid="{59727D06-40F4-4510-800E-8D224A652627}">
+            <File Id="License"
+                  Name="License.rtf"
+                  Source=".\resources\License.rtf"
+                  Vital="yes"
+                  KeyPath="no"
+                  DiskId="1" />
             <File Id="CollectdWinService.exe"
                   Name="CollectdWinService.exe"
                   Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\CollectdWinService.exe"
@@ -82,10 +88,20 @@
       </Directory>
     </Directory>
     <Feature Id="ProductFeature"
-             Title="CollectdWinService"
-             Level="1">
-      <ComponentRef Id="BloombergFLP.CollectdWinService" />
+             Title="Netuitive Windows Agent"
+             Description="Netuitive Windows Agent powered by CollectdWin."
+             Display="expand"
+             Level="1"
+             ConfigurableDirectory="INSTALLDIR">
+      <ComponentRef Id="Netuitive.CollectdWinService" />
     </Feature>
+    
+    <UIRef Id="WixUI_Mondo" />
+    <UIRef Id="WixUI_ErrorProgressText" />
+    
+    <WixVariable Id="WixUILicenseRtf" Value=".\resources\License.rtf" />
+    <WixVariable Id="WixUIBannerBmp" Value=".\resources\banner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value=".\resources\dialog.bmp" />
 
     <Upgrade Id="$(var.UpgradeCode)">
       <UpgradeVersion Minimum="0.6.0"
