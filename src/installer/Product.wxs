@@ -102,6 +102,10 @@
     <WixVariable Id="WixUILicenseRtf" Value=".\resources\License.rtf" />
     <WixVariable Id="WixUIBannerBmp" Value=".\resources\banner.bmp" />
     <WixVariable Id="WixUIDialogBmp" Value=".\resources\dialog.bmp" />
+    <WixVariable Id="WixUIExclamationIco" Value=".\resources\exclamation.ico" />
+    <WixVariable Id="WixUIInfoIco" Value=".\resources\information.ico" />
+    <WixVariable Id="WixUINewIco" Value=".\resources\new.ico" />
+    <WixVariable Id="WixUIUpIco" Value=".\resources\up.ico" />
 
     <Upgrade Id="$(var.UpgradeCode)">
       <UpgradeVersion Minimum="0.6.0"
