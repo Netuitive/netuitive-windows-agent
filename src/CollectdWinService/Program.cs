@@ -33,10 +33,13 @@ namespace BloombergFLP.CollectdWin
 
             var collectdWinService = new CollectdWinService();
 
-            if (Array.Find(args, s => s.Equals(@"/console")) != null)
+            if (Array.Find(args, s => s.Equals(@"console")) != null)
             {
+                Console.WriteLine("Starting CollectdWin...");
                 // run as a console application for testing and debugging purpose
                 collectdWinService.StartService();
+                Console.WriteLine("Press Ctrl-C to exit.");
+                Console.ReadLine();
             }
             else
             {
