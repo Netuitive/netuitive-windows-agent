@@ -84,6 +84,71 @@
                             Name="$(var.ProductName)"
                             Wait="yes" />
           </Component>
+          <Directory Id="config" Name="config">
+            <Component Id="Netuitive.CollectdWinConfig" Guid="{9F30B0DE-2FB6-41D7-B8FC-3810C4574382}">
+              <File Id="CollectdWin.config"
+                    Name="CollectdWin.config"
+                    Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\CollectdWin.config"
+                    Vital="yes"
+                    KeyPath="no"
+                    DiskId="1" />
+              <File Id="ReadStatsD.config"
+                    Name="ReadStatsD.config"
+                    Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\ReadStatsD.config"
+                    Vital="yes"
+                    KeyPath="no"
+                    DiskId="1" />
+              <File Id="ReadWindowsAttributes.config"
+                    Name="ReadWindowsAttributes.config"
+                    Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\ReadWindowsAttributes.config"
+                    Vital="yes"
+                    KeyPath="no"
+                    DiskId="1" />
+              <File Id="ReadWindowsEvents.config"
+                    Name="ReadWindowsEvents.config"
+                    Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\ReadWindowsEvents.config"
+                    Vital="yes"
+                    KeyPath="no"
+                    DiskId="1" />
+              <File Id="ReadWindowsPerfCounters.config"
+                    Name="ReadWindowsPerfCounters.config"
+                    Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\ReadWindowsPerfCounters.config"
+                    Vital="yes"
+                    KeyPath="no"
+                    DiskId="1" />
+              <File Id="WriteAmqp.config"
+                    Name="WriteAmqp.config"
+                    Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\WriteAmqp.config"
+                    Vital="yes"
+                    KeyPath="no"
+                    DiskId="1" />
+              <File Id="WriteHTTP.config"
+                    Name="WriteHTTP.config"
+                    Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\WriteHTTP.config"
+                    Vital="yes"
+                    KeyPath="no"
+                    DiskId="1" />
+              <File Id="WriteNetuitive.config"
+                    Name="WriteNetuitive.config"
+                    Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\WriteNetuitive.config"
+                    Vital="yes"
+                    KeyPath="no"
+                    DiskId="1" />
+              <File Id="WriteNetuitiveEvents.config"
+                    Name="WriteNetuitiveEvents.config"
+                    Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\WriteNetuitiveEvents.config"
+                    Vital="yes"
+                    KeyPath="no"
+                    DiskId="1" />
+              <File Id="WriteStatsd.config"
+                    Name="WriteStatsd.config"
+                    Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\WriteStatsd.config"
+                    Vital="yes"
+                    KeyPath="no"
+                    DiskId="1" />
+            </Component>
+          </Directory>
+
         </Directory>
       </Directory>
     </Directory>
@@ -94,6 +159,7 @@
              Level="1"
              ConfigurableDirectory="INSTALLDIR">
       <ComponentRef Id="Netuitive.CollectdWinService" />
+      <ComponentRef Id="Netuitive.CollectdWinConfig"/>
     </Feature>
     
     <UIRef Id="WixUI_Mondo" />

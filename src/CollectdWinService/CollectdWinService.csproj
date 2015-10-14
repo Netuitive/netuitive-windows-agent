@@ -120,16 +120,25 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Aggregator.cs" />
-    <Compile Include="AmqpPlugin.cs" />
+    <Compile Include="config\WriteNetuitiveEventsPluginConfig.cs" />
+    <Compile Include="WriteAmqpPlugin.cs" />
     <Compile Include="CollectableValue.cs" />
-    <Compile Include="ConsolePlugin.cs" />
+    <Compile Include="config\WriteAmqpPluginConfig.cs" />
+    <Compile Include="config\CollectdWinConfig.cs" />
+    <Compile Include="config\ReadStatsdPluginConfig.cs" />
+    <Compile Include="config\ReadWindowsAttributesPluginConfig.cs" />
+    <Compile Include="config\ReadWindowsEventPluginConfig.cs" />
+    <Compile Include="config\ReadWindowsPerfCountersPluginConfig.cs" />
+    <Compile Include="config\WriteHTTPPluginConfig.cs" />
+    <Compile Include="config\WriteNetuitivePluginConfig.cs" />
+    <Compile Include="config\WriteStatsdPluginConfig.cs" />
+    <Compile Include="WriteConsolePlugin.cs" />
     <Compile Include="Histogram.cs" />
     <Compile Include="MetricsCollector.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="CollectdWinService.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="MetricsConfiguration.cs" />
     <Compile Include="PluginRegistry.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -139,8 +148,10 @@
     <Compile Include="ReadStatsdPlugin.cs" />
     <Compile Include="TypesDB.cs" />
     <Compile Include="Util.cs" />
-    <Compile Include="WindowsAttributesPlugin.cs" />
-    <Compile Include="WindowsPerformanceCounterPlugin.cs" />
+    <Compile Include="ReadWindowsEventsPlugin.cs" />
+    <Compile Include="ReadWindowsAttributesPlugin.cs" />
+    <Compile Include="ReadWindowsPerfCountersPlugin.cs" />
+    <Compile Include="WriteNetuitiveEventsPlugin.cs" />
     <Compile Include="WriteStatsdPlugin.cs" />
     <Compile Include="WriteNetuitivePlugin.cs" />
     <Compile Include="WriteHTTPPlugin.cs" />
@@ -153,6 +164,38 @@
   <ItemGroup>
     <None Include="app.config">
       <SubType>Designer</SubType>
+    </None>
+    <None Include="config\ReadWindowsEvents.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="config\ReadWindowsAttributes.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="config\ReadStatsd.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="config\WriteAmqp.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="config\CollectdWin.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="config\WriteNetuitiveEvents.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="config\WriteStatsd.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="config\WriteHTTP.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="config\ReadWindowsPerfCounters.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="config\WriteNetuitive.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="types.db">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

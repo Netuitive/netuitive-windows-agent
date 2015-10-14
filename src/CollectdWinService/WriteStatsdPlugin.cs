@@ -17,18 +17,17 @@ namespace Netuitive.CollectdWin
 
         public void Configure()
         {
-            var config = ConfigurationManager.GetSection("CollectdWinConfig") as CollectdWinConfig;
+            var config = ConfigurationManager.GetSection("WriteStatsd") as WriteStatsdPluginConfig;
             if (config == null)
             {
-                throw new Exception("Cannot get configuration section : CollectdWinConfig");
+                throw new Exception("Cannot get configuration section : WriteStatsd");
             }
 
-            _host = config.WriteStatsd.Host;
-            _prefix = config.WriteStatsd.Prefix;
-            _port = config.WriteStatsd.Port;
+            _host = config.Host;
+            _prefix = config.Prefix;
+            _port = config.Port;
             Logger.Info("Posting to: {0}:{1}", _host, _port);
             Logger.Info("Namespace prefix: {0}", _prefix, _port);
-
 
         }
 
@@ -85,9 +84,16 @@ namespace Netuitive.CollectdWin
 
         public void Write(Queue<CollectableValue> values)
         {
-            foreach (CollectableValue value in values)
+            try
             {
-                Write(value);
+                foreach (CollectableValue value in values)
+                {
+                    Write(value);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("WriteStatsd failed", ex);
             }
         }
     }
