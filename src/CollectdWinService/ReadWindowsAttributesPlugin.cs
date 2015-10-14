@@ -16,30 +16,30 @@ namespace Netuitive.CollectdWin
         public string variableName;
     }
 
-    internal class WindowsAttributesPlugin : ICollectdReadPlugin
+    internal class ReadWindowsAttributesPlugin : ICollectdReadPlugin
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly IList<Attribute> _attributes;
         private string _hostName;
 
-        public WindowsAttributesPlugin()
+        public ReadWindowsAttributesPlugin()
         {
             _attributes = new List<Attribute>();
         }
 
         public void Configure()
         {
-            var config = ConfigurationManager.GetSection("CollectdWinConfig") as CollectdWinConfig;
+            var config = ConfigurationManager.GetSection("ReadWindowsAttributes") as ReadWindowsAttributesPluginConfig;
             if (config == null)
             {
-                throw new Exception("Cannot get configuration section : CollectdWinConfig");
+                throw new Exception("Cannot get configuration section : ReadWindowsAttributes");
             }
 
             _hostName = Util.GetHostName();
 
             _attributes.Clear();
 
-            foreach (CollectdWinConfig.EnvironmentVariableConfig attr in config.EnvironmentVariableList)
+            foreach (EnvironmentVariableConfig attr in config.EnvironmentVariables)
             {
                 Attribute attribute = new Attribute
                 {
@@ -50,17 +50,17 @@ namespace Netuitive.CollectdWin
                 Logger.Info("Added attribute {0}: {1}", attr.Name, attr.Value);
 
             }
-            Logger.Info("WindowsAttributes plugin configured");
+            Logger.Info("ReadWindowsAttributes plugin configured");
         }
 
         public void Start()
         {
-            Logger.Info("WindowsAttributes plugin started");
+            Logger.Info("ReadWindowsAttributes plugin started");
         }
 
         public void Stop()
         {
-            Logger.Info("WindowsAttributes plugin stopped");
+            Logger.Info("ReadWindowsAttributes plugin stopped");
         }
 
         public IList<CollectableValue> Read()
@@ -113,8 +113,7 @@ namespace Netuitive.CollectdWin
                 ObjectQuery query = new ObjectQuery("SELECT * FROM Win32_PhysicalMemory");
                 ManagementObjectSearcher searcher = new ManagementObjectSearcher(scope, query);
                 foreach (ManagementObject queryObj in searcher.Get())
-                {
-                    Logger.Debug("Capacity: {0}", queryObj["Capacity"]);
+                {                    
                     totalRAM += Convert.ToInt64(queryObj["Capacity"]);
                 }
             }

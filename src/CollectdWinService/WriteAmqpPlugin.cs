@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace BloombergFLP.CollectdWin
 {
-    internal class AmqpPlugin : ICollectdWritePlugin
+    internal class WriteAmqpPlugin : ICollectdWritePlugin
     {
         private const int ConnectionRetryDelay = 60; // 1 minute
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
@@ -20,7 +20,7 @@ namespace BloombergFLP.CollectdWin
         private string _routingKeyPrefix;
         private string _url;
 
-        public AmqpPlugin()
+        public WriteAmqpPlugin()
         {
             _connected = false;
             _lastConnectTime = 0;
@@ -29,21 +29,21 @@ namespace BloombergFLP.CollectdWin
 
         public void Configure()
         {
-            var config = ConfigurationManager.GetSection("CollectdWinConfig") as CollectdWinConfig;
+            var config = ConfigurationManager.GetSection("WriteAmqp") as WriteAmqpPluginConfig;
             if (config == null)
             {
-                throw new Exception("Cannot get configuration section : CollectdWinConfig");
+                throw new Exception("Cannot get configuration section : WriteAmqp");
             }
 
-            string user = config.Amqp.Publish.User;
-            string password = config.Amqp.Publish.Password;
-            string host = config.Amqp.Publish.Host;
-            int port = config.Amqp.Publish.Port;
-            string vhost = config.Amqp.Publish.VirtualHost;
+            string user = config.Publish.User;
+            string password = config.Publish.Password;
+            string host = config.Publish.Host;
+            int port = config.Publish.Port;
+            string vhost = config.Publish.VirtualHost;
 
             _url = "amqp://" + user + ":" + password + "@" + host + ":" + port + "/" + vhost;
-            _exchange = config.Amqp.Publish.Exchange;
-            _routingKeyPrefix = config.Amqp.Publish.RoutingKeyPrefix;
+            _exchange = config.Publish.Exchange;
+            _routingKeyPrefix = config.Publish.RoutingKeyPrefix;
             Logger.Info("Amqp plugin configured");
         }
 
@@ -51,14 +51,14 @@ namespace BloombergFLP.CollectdWin
         {
             Logger.Trace("Start() begin.");
             StartConnection();
-            Logger.Info("Amqp plugin started");
+            Logger.Info("ReadAmqp plugin started");
         }
 
         public void Stop()
         {
             Logger.Trace("CloseConnection() begin");
             CloseConnection();
-            Logger.Info("Amqp plugin stopped");
+            Logger.Info("ReadAmqp plugin stopped");
         }
         
         public void Write(Queue<CollectableValue> values)
