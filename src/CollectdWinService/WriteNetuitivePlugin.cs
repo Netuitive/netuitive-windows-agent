@@ -11,13 +11,11 @@ namespace Netuitive.CollectdWin
 {
     internal class WriteNetuitivePlugin : ICollectdWritePlugin
     {
+        private const string NETUITIVE_METRIC_JSON_FORMAT = @"{{""id"":""{0}"", ""unit"":""{1}"", ""name"":""{2}""}}";
 
-        private const string NetuitiveMetricFormat = @"{{""id"":""{0}"", ""unit"":""{1}"", ""name"":""{2}""}}";
+        private const string NETUITIVE_SAMPLE_JSON_FORMAT = @"{{""metricId"":""{0}"", ""timestamp"":{1}, ""val"":{2}}}";
 
-        private const string NetuitiveSampleFormat = @"{{""metricId"":""{0}"", ""timestamp"":{1}, ""val"":{2}}}";
-
-
-        private const string NetuitiveJsonFormat =
+        private const string NETUITIVE_INGEST_JSON_FORMAT =
          @"{{""type"": ""{0}"", ""id"":""{1}"", ""name"":""{2}"", ""location"":""{3}""" + 
          @", ""metrics"":[{4}]" +  
          @", ""samples"":[{5}]" +
@@ -26,28 +24,30 @@ namespace Netuitive.CollectdWin
          @"}} ";
 
 
+
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        private string _url;
+        private string _ingestUrl;
         private string _location;
         private string _elementType;
         private int _payloadSize;
 
         public void Configure()
         {
-            var config = ConfigurationManager.GetSection("CollectdWinConfig") as CollectdWinConfig;
+            var config = ConfigurationManager.GetSection("WriteNetuitive") as WriteNetuitivePluginConfig;
             if (config == null)
             {
-                throw new Exception("Cannot get configuration section : CollectdWinConfig");
+                throw new Exception("Cannot get configuration section : WriteNetuitive");
             }
 
-            string url = config.WriteNetuitive.Url;
+            string url = config.Url;
             Logger.Info("Posting to: {0}", url);
 
-            _url = url;
+            _ingestUrl = url;
 
-            _location = config.WriteNetuitive.Location;
 
-            string type = config.WriteNetuitive.Type;
+            _location = config.Location;
+
+            string type = config.Type;
             if (type == null || type.Trim().Length == 0)
             {
                 _elementType = "WINSRV";
@@ -58,7 +58,7 @@ namespace Netuitive.CollectdWin
             }
             Logger.Info("Element type: {0}", _elementType);
 
-            _payloadSize = config.WriteNetuitive.PayloadSize;
+            _payloadSize = config.PayloadSize;
             if (_payloadSize < 0)
                 _payloadSize = 99999;
             else if (_payloadSize == 0)
@@ -80,119 +80,105 @@ namespace Netuitive.CollectdWin
 
         public void Write(Queue<CollectableValue> values)
         {
-            // Split the complete list into configured bathe
-            while (values.Count > 0)
-            {
-                List<string> jsonParts = new List<string>();
-                int counter = 0;
-                while (values.Count > 0 && counter++ < _payloadSize)
+            // Split the complete list into configured batch size
+
+            List<string> jsonList = new List<string>();
+            int ix = 0;
+            foreach (CollectableValue value in values) {
+                ix++;
+                if (value is MetricValue)
                 {
-                    CollectableValue value = values.Dequeue();
-                    jsonParts.Add(GeNetuitiveJsonStr(value));
+                    jsonList.Add(GetMetricJsonStr((MetricValue)value));
                 }
-                string payload = "[" + string.Join(",", jsonParts.ToArray()) + "]";
-                PostToNetuitive(payload);
-            }
-
-
-        }
-
-        private void PostToNetuitive(string payload)
-        {
-            Logger.Debug("WriteNetuitive: {0}", payload);
-
-            string result = "";
-            try
-            {
-                using (var client = new WebClient())
+                else if (value is AttributeValue)
                 {
-                    client.Headers[HttpRequestHeader.ContentType] = "application/json";
-                    result = client.UploadString(_url, "POST", payload);
-                }
-            }
-            catch (System.Net.WebException ex)
-            {
-                Exception baseex = ex.GetBaseException();
-                if (baseex as ThreadInterruptedException != null)
-                {
-                    throw baseex;
+                    jsonList.Add(GetAttributeJsonStr((AttributeValue)value));
                 }
                 else
-                    Logger.Error("Error posting data: {0}", payload, ex);
+                {
+                    // Collectable value type not handled by this adapter
+                }
+
+                // Send payload if reached end or max size
+                if (jsonList.Count == _payloadSize || (ix == values.Count && jsonList.Count > 0))
+                {
+                    string payload = "[" + string.Join(",", jsonList.ToArray()) + "]";
+                    string res = Util.PostJson(_ingestUrl, payload);
+                    if (res.Length > 0)
+                    {
+                        Logger.Error("Error posting metrics/attributes: {0}", res);
+                    }
+
+                    jsonList.Clear();
+                }
             }
-            Logger.Debug("response: {0}", result);
-        }
-        public void Write(CollectableValue value)
-        {
-            string payload = "[" + GeNetuitiveJsonStr(value) + "]";
-            PostToNetuitive(payload);
         }
 
-        public string GeNetuitiveJsonStr(CollectableValue value)
+        public void Write(CollectableValue value)
+        {
+            Queue<CollectableValue> entry = new Queue<CollectableValue>();
+            entry.Enqueue(value);
+            Write(entry);
+        }
+
+        public string GetMetricJsonStr(MetricValue value)
         {
             var metricList = new List<string>();
             var sampleList = new List<string>();
-            var attributeList = new List<string>();
 
-            if (value is AttributeValue)
+            MetricValue metric = (MetricValue)value;
+            string metricId = metric.PluginName;
+            if (metric.PluginInstanceName.Length > 0)
+                metricId += "." + metric.PluginInstanceName.Replace(".", "_");
+            if (metric.TypeInstanceName.Length > 0)
+                metricId += "." + metric.TypeInstanceName;
+
+            if (metric.Values.Length == 1)
             {
-                AttributeValue attr = (AttributeValue)value;
-                attributeList.Add(attr.getJSON());
+                // Simple case - just one metric in type
+                metricList.Add(string.Format(NETUITIVE_METRIC_JSON_FORMAT, metricId, metric.TypeName, metric.FriendlyNames[0]));
+                sampleList.Add(string.Format(NETUITIVE_SAMPLE_JSON_FORMAT, metricId, (long)metric.Epoch * 1000, metric.Values[0]));
             }
-            else if (value is MetricValue)
+            else if (metric.Values.Length > 1)
             {
-                MetricValue metric = (MetricValue)value;
-                string metricId = metric.PluginName;
-                if (metric.PluginInstanceName.Length > 0)
-                    metricId += "." + metric.PluginInstanceName.Replace(".", "_");
-                if (metric.TypeInstanceName.Length > 0)
-                    metricId += "." + metric.TypeInstanceName;
-
-                if (metric.Values.Length == 1)
+                // Compound type with multiple metrics
+                IList<DataSource> dsList = DataSetCollection.Instance.GetDataSource(metric.TypeName);
+                if (dsList == null)
                 {
-                    // Simple case - just one metric in type
-                    metricList.Add(string.Format(NetuitiveMetricFormat, metricId, metric.TypeName, metric.FriendlyNames[0]));
-                    sampleList.Add(string.Format(NetuitiveSampleFormat, metricId, (long)metric.Epoch * 1000, metric.Values[0]));
+                    Logger.Debug("Invalid type : {0}, not found in types.db", metric.TypeName);
                 }
-                else if (metric.Values.Length > 1)
+                else
                 {
-                    // Compound type with multiple metrics
-                    IList<DataSource> dsList = DataSetCollection.Instance.GetDataSource(metric.TypeName);
-                    if (dsList == null)
+                    int ix = 0;
+                    foreach (DataSource ds in dsList)
                     {
-                        Logger.Debug("Invalid type : {0}, not found in types.db", metric.TypeName);
-                    }
-                    else
-                    {
-                        int ix = 0;
-                        foreach (DataSource ds in dsList)
-                        {
-                            // Include the Types.db suffix in the metric name
-                            metricList.Add(string.Format(NetuitiveMetricFormat, metricId, metric.TypeName, metric.FriendlyNames[ix]));
-                            sampleList.Add(string.Format(NetuitiveSampleFormat, metricId + "." + ds.Name, (long)metric.Epoch * 1000, metric.Values[ix]));
-                            ix++;
-                        }
+                        // Include the Types.db suffix in the metric name
+                        metricList.Add(string.Format(NETUITIVE_METRIC_JSON_FORMAT, metricId, metric.TypeName, metric.FriendlyNames[ix]));
+                        sampleList.Add(string.Format(NETUITIVE_SAMPLE_JSON_FORMAT, metricId + "." + ds.Name, (long)metric.Epoch * 1000, metric.Values[ix]));
+                        ix++;
                     }
                 }
             }
-            string metricsString = string.Join(",",  metricList.ToArray());
+            string metricsString = string.Join(",", metricList.ToArray());
             string samplesString = string.Join(",", sampleList.ToArray());
-            string attributesString = string.Join(",", attributeList.ToArray());
 
-            string res = string.Format(NetuitiveJsonFormat, _elementType, value.HostName, value.HostName, _location,
+            string res = string.Format(NETUITIVE_INGEST_JSON_FORMAT, _elementType, value.HostName, value.HostName, _location,
                 metricsString,
-                samplesString, 
-                attributesString);
-            return (res);
-        
+                samplesString,
+                "");
+            return res;
         }
+
+        public string GetAttributeJsonStr(AttributeValue value)
+        {
+            string res = string.Format(NETUITIVE_INGEST_JSON_FORMAT, _elementType, value.HostName, value.HostName, _location,
+                "",
+                "",
+                value.getJSON());
+            return res;
+        }
+
     }
-
-
-
-
-
-
 
 }
 
