@@ -13,11 +13,9 @@ namespace Netuitive.CollectdWin
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private string _eventIngestUrl;
-        private string _location;
-        private string _elementType;
         private int _payloadSize;
         private int _maxLength;
-        private const string EVENT_JSON_FORMAT = @"{{""type"": ""{0}"", ""source"":""{1}"", ""data"":{{""elementId"":""{2}""}}, ""title"":""{3}"", ""timestamp"": {4} }}";
+        private const string EVENT_JSON_FORMAT = @"{{""type"": ""{0}"", ""source"":""{1}"", ""data"":{{""elementId"":""{2}"", ""level"":""{3}"", ""message"":""{4}""}}, ""title"":""{5}"", ""timestamp"": {6} }}";
 
         public void Configure()
         {
@@ -62,13 +60,29 @@ namespace Netuitive.CollectdWin
                     if (value is EventValue)
                     {
                         EventValue ev = (EventValue)value;
-                        string message = ev.Level + " - " + ev.Message;
-                        if (message.Length > _maxLength)
-                            message = message.Substring(0, _maxLength);
+                        string message = ev.Message;
+                        string title = ev.Level + " - " + ev.Message;
+                        if (title.Length > _maxLength)
+                            title = title.Substring(0, _maxLength);
 
-                        message = message.Replace("\"", "\\\"").Replace("\r", "").Replace("\n", "");
-                        //TODO - once other types are supported make dynamic
-                        string json = String.Format(EVENT_JSON_FORMAT, "INFO", "", ev.HostName, message, ev.Timestamp * 1000);
+                        title = title.Replace("\"", "\\\"").Replace("\r", "").Replace("\n", "").Replace("\\", "\\\\");
+                        message = message.Replace("\"", "\\\"").Replace("\r", "").Replace("\n", "").Replace("\\", "\\\\");
+        
+                        //Convert level to netuitive compatible levels
+                        string level = "";
+                        switch(ev.Level) {
+                            case "CRITICAL": case "ERROR":
+                                level = "CRITICAL";
+                                break;
+                            case "WARNING":
+                                level = "WARNING";
+                                break;
+                            case "INFO": case "DEBUG": default:
+                                level = "INFO";
+                                break;
+                        }
+
+                        string json = String.Format(EVENT_JSON_FORMAT, "INFO", "", ev.HostName, level, message, title, ev.Timestamp * 1000);
 
                         jsonList.Add(json);
                     }
@@ -84,6 +98,7 @@ namespace Netuitive.CollectdWin
                     if (res.Length > 0)
                     {
                         Logger.Error("Error posting events: {0}", res);
+                        Logger.Debug("Payload: {0}", payload);
                     }
                     jsonList.Clear();
                 }
