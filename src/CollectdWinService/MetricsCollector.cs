@@ -121,11 +121,8 @@ namespace BloombergFLP.CollectdWin
                         double start = Util.GetNow();
                         IList<CollectableValue> collectedValues = readPlugin.Read();
 
-                        if (Logger.IsDebugEnabled)
-                        {
-                            double end = Util.GetNow();
-                            Logger.Debug("{0} read {1} items in {2:0.00}s", readPlugin.GetType().Name, collectedValues.Count, end - start);
-                        }
+                        double end = Util.GetNow();
+                        Logger.Info("{0} read {1} items in {2:0.00}s", readPlugin.GetType().Name, collectedValues.Count, end - start);
 
                         if (collectedValues == null || !collectedValues.Any())
                             continue;
@@ -220,9 +217,8 @@ namespace BloombergFLP.CollectdWin
                         }
                     }
                     double writeEnd = Util.GetNow();
-                    if (Logger.IsDebugEnabled) {
-                        Logger.Debug("Written {0} values in {1:0.00}s", numValues, (writeEnd - writeStart));
-                    }
+                    Logger.Info("Written {0} values in {1:0.00}s", numValues, (writeEnd - writeStart));
+                    
                     double elapsed = writeEnd - writeStart;
                     double revisedInterval = (_interval - elapsed) * 1000;
                     if (revisedInterval / _interval < 0.1)

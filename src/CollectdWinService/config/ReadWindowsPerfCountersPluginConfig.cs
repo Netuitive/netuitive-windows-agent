@@ -13,6 +13,13 @@ namespace BloombergFLP.CollectdWin
             get { return (CounterConfigCollection)base["Counters"]; }
             set { base["Counters"] = value; }
         }
+
+        [ConfigurationProperty("ReloadInterval", IsRequired = false, DefaultValue = 3600)]
+        public int ReloadInterval
+        {
+            get { return (int)base["ReloadInterval"]; }
+            set { base["ReloadInterval"] = value; }
+        }
     }
 
       public class CounterConfigCollection : ConfigurationElementCollection
