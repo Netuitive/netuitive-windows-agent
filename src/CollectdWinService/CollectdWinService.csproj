@@ -120,7 +120,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Aggregator.cs" />
-    <Compile Include="config\WriteNetuitiveEventsPluginConfig.cs" />
     <Compile Include="WriteAmqpPlugin.cs" />
     <Compile Include="CollectableValue.cs" />
     <Compile Include="config\WriteAmqpPluginConfig.cs" />
@@ -151,7 +150,6 @@
     <Compile Include="ReadWindowsEventsPlugin.cs" />
     <Compile Include="ReadWindowsAttributesPlugin.cs" />
     <Compile Include="ReadWindowsPerfCountersPlugin.cs" />
-    <Compile Include="WriteNetuitiveEventsPlugin.cs" />
     <Compile Include="WriteStatsdPlugin.cs" />
     <Compile Include="WriteNetuitivePlugin.cs" />
     <Compile Include="WriteHTTPPlugin.cs" />
@@ -181,9 +179,6 @@
     <None Include="config\CollectdWin.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>
-    </None>
-    <None Include="config\WriteNetuitiveEvents.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="config\WriteStatsd.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

@@ -31,6 +31,11 @@ namespace BloombergFLP.CollectdWin
             get { return (int)base["PayloadSize"]; }
             set { base["PayloadSize"] = value; }
         }
-
+        [ConfigurationProperty("MaxEventTitleLength", IsRequired = false, DefaultValue=100)]
+        public int MaxEventTitleLength
+        {
+            get { return (int)base["MaxEventTitleLength"]; }
+            set { base["MaxEventTitleLength"] = value; }
+        }
     }
 }

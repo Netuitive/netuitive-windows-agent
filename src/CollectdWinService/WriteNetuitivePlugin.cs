@@ -16,19 +16,22 @@ namespace Netuitive.CollectdWin
         private const string NETUITIVE_SAMPLE_JSON_FORMAT = @"{{""metricId"":""{0}"", ""timestamp"":{1}, ""val"":{2}}}";
 
         private const string NETUITIVE_INGEST_JSON_FORMAT =
-         @"{{""type"": ""{0}"", ""id"":""{1}"", ""name"":""{2}"", ""location"":""{3}""" + 
-         @", ""metrics"":[{4}]" +  
+         @"{{""type"": ""{0}"", ""id"":""{1}"", ""name"":""{2}"", ""location"":""{3}""" +
+         @", ""metrics"":[{4}]" +
          @", ""samples"":[{5}]" +
-         @", ""attributes"":[{6}]" + 
-        // @", ""tags"": [{""name"":""testtag"", ""value"":""testtagval""}]" + 
+         @", ""attributes"":[{6}]" +
+            // @", ""tags"": [{""name"":""testtag"", ""value"":""testtagval""}]" + 
          @"}} ";
 
-
+        private const string EVENT_JSON_FORMAT = @"{{""type"": ""{0}"", ""source"":""{1}"", ""data"":{{""elementId"":""{2}"", ""level"":""{3}"", ""message"":""{4}""}}, ""title"":""{5}"", ""timestamp"": {6} }}";
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private string _ingestUrl;
+        private string _eventIngestUrl;
+        private int _maxEventTitleLength;
+
         private string _location;
-        private string _elementType;
+        private string _defaultElementType;
         private int _payloadSize;
 
         public void Configure()
@@ -39,24 +42,22 @@ namespace Netuitive.CollectdWin
                 throw new Exception("Cannot get configuration section : WriteNetuitive");
             }
 
-            string url = config.Url;
-            Logger.Info("Posting to: {0}", url);
-
-            _ingestUrl = url;
-
+            _ingestUrl = config.Url;
+            _eventIngestUrl = _ingestUrl.Replace("/ingest/", "/ingest/events/");
+            Logger.Info("Posting metrics/attributes to:{0}, events to:{1}", _ingestUrl, _eventIngestUrl);
 
             _location = config.Location;
 
             string type = config.Type;
             if (type == null || type.Trim().Length == 0)
             {
-                _elementType = "WINSRV";
+                _defaultElementType = "WINSRV";
             }
             else
             {
-                _elementType = type;
+                _defaultElementType = type;
             }
-            Logger.Info("Element type: {0}", _elementType);
+            Logger.Info("Element type: {0}", _defaultElementType);
 
             _payloadSize = config.PayloadSize;
             if (_payloadSize < 0)
@@ -66,6 +67,8 @@ namespace Netuitive.CollectdWin
 
             Logger.Info("Maximum payload size: {0}", _payloadSize);
 
+
+            _maxEventTitleLength = config.MaxEventTitleLength;
         }
 
         public void Start()
@@ -82,17 +85,23 @@ namespace Netuitive.CollectdWin
         {
             // Split the complete list into configured batch size
 
-            List<string> jsonList = new List<string>();
-            int ix = 0;
-            foreach (CollectableValue value in values) {
-                ix++;
+            List<string> metricAttributeJsonList = new List<string>();
+            List<string> eventJsonList = new List<string>();
+            int counter = 0;
+            foreach (CollectableValue value in values)
+            {
+                counter++;
                 if (value is MetricValue)
                 {
-                    jsonList.Add(GetMetricJsonStr((MetricValue)value));
+                    metricAttributeJsonList.Add(GetMetricJsonStr((MetricValue)value));
                 }
                 else if (value is AttributeValue)
                 {
-                    jsonList.Add(GetAttributeJsonStr((AttributeValue)value));
+                    metricAttributeJsonList.Add(GetAttributeJsonStr((AttributeValue)value));
+                }
+                else if (value is EventValue)
+                {
+                    eventJsonList.Add(GetEventJsonStr((EventValue)value));
                 }
                 else
                 {
@@ -100,16 +109,31 @@ namespace Netuitive.CollectdWin
                 }
 
                 // Send payload if reached end or max size
-                if (jsonList.Count == _payloadSize || (ix == values.Count && jsonList.Count > 0))
+                if (metricAttributeJsonList.Count == _payloadSize || eventJsonList.Count == _payloadSize || counter == values.Count)
                 {
-                    string payload = "[" + string.Join(",", jsonList.ToArray()) + "]";
-                    string res = Util.PostJson(_ingestUrl, payload);
-                    if (res.Length > 0)
+                    if (metricAttributeJsonList.Count > 0)
                     {
-                        Logger.Error("Error posting metrics/attributes: {0}", res);
-                    }
+                        string payload = "[" + string.Join(",", metricAttributeJsonList.ToArray()) + "]";
+                        string res = Util.PostJson(_ingestUrl, payload);
+                        if (res.Length > 0)
+                        {
+                            Logger.Error("Error posting metrics/attributes: {0}", res);
+                            Logger.Debug("Payload: {0}", payload);
+                        }
 
-                    jsonList.Clear();
+                        metricAttributeJsonList.Clear();
+                    }
+                    if (eventJsonList.Count > 0)
+                    {
+                        string payload = "[" + string.Join(",", eventJsonList.ToArray()) + "]";
+                        string res = Util.PostJson(_eventIngestUrl, payload);
+                        if (res.Length > 0)
+                        {
+                            Logger.Error("Error posting events: {0}", res);
+                            Logger.Debug("Payload: {0}", payload);
+                        }
+                        eventJsonList.Clear();
+                    }
                 }
             }
         }
@@ -162,7 +186,7 @@ namespace Netuitive.CollectdWin
             string metricsString = string.Join(",", metricList.ToArray());
             string samplesString = string.Join(",", sampleList.ToArray());
 
-            string res = string.Format(NETUITIVE_INGEST_JSON_FORMAT, _elementType, value.HostName, value.HostName, _location,
+            string res = string.Format(NETUITIVE_INGEST_JSON_FORMAT, _defaultElementType, value.HostName, value.HostName, _location,
                 metricsString,
                 samplesString,
                 "");
@@ -171,15 +195,45 @@ namespace Netuitive.CollectdWin
 
         public string GetAttributeJsonStr(AttributeValue value)
         {
-            string res = string.Format(NETUITIVE_INGEST_JSON_FORMAT, _elementType, value.HostName, value.HostName, _location,
+            string res = string.Format(NETUITIVE_INGEST_JSON_FORMAT, _defaultElementType, value.HostName, value.HostName, _location,
                 "",
                 "",
                 value.getJSON());
             return res;
         }
 
-    }
+        public string GetEventJsonStr(EventValue value)
+        {
+            string message = value.Message;
+            string title = value.Level + " - " + value.Message;
+            if (title.Length > _maxEventTitleLength)
+                title = title.Substring(0, _maxEventTitleLength);
 
+            title = title.Replace("\"", "\\\"").Replace("\r", "").Replace("\n", "").Replace("\\", "\\\\");
+            message = message.Replace("\"", "\\\"").Replace("\r", "").Replace("\n", "").Replace("\\", "\\\\");
+
+            //Convert level to netuitive compatible levels
+            string level = "";
+            switch (value.Level)
+            {
+                case "CRITICAL":
+                case "ERROR":
+                    level = "CRITICAL";
+                    break;
+                case "WARNING":
+                    level = "WARNING";
+                    break;
+                case "INFO":
+                case "DEBUG":
+                default:
+                    level = "INFO";
+                    break;
+            }
+
+            string json = String.Format(EVENT_JSON_FORMAT, "INFO", "", value.HostName, level, message, title, value.Timestamp * 1000);
+            return json;
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------

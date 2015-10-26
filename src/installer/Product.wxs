@@ -134,12 +134,6 @@
                     Vital="yes"
                     KeyPath="no"
                     DiskId="1" />
-              <File Id="WriteNetuitiveEvents.config"
-                    Name="WriteNetuitiveEvents.config"
-                    Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\WriteNetuitiveEvents.config"
-                    Vital="yes"
-                    KeyPath="no"
-                    DiskId="1" />
               <File Id="WriteStatsd.config"
                     Name="WriteStatsd.config"
                     Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\WriteStatsd.config"
