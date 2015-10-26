@@ -122,7 +122,7 @@ namespace BloombergFLP.CollectdWin
                         IList<CollectableValue> collectedValues = readPlugin.Read();
 
                         double end = Util.GetNow();
-                        Logger.Info("{0} read {1} items in {2:0.00}s", readPlugin.GetType().Name, collectedValues.Count, end - start);
+                        Logger.Info("Read {1} items in {2:0.00}s [{0}]", readPlugin.GetType().Name, collectedValues.Count, end - start);
 
                         if (collectedValues == null || !collectedValues.Any())
                             continue;

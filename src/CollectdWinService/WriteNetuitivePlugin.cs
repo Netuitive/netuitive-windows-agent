@@ -117,8 +117,8 @@ namespace Netuitive.CollectdWin
                         string res = Util.PostJson(_ingestUrl, payload);
                         if (res.Length > 0)
                         {
-                            Logger.Error("Error posting metrics/attributes: {0}", res);
-                            Logger.Debug("Payload: {0}", payload);
+                            Logger.Warn("Error posting metrics/attributes: {0}", res);
+                            Logger.Warn("Payload: {0}", payload);
                         }
 
                         metricAttributeJsonList.Clear();
@@ -129,8 +129,9 @@ namespace Netuitive.CollectdWin
                         string res = Util.PostJson(_eventIngestUrl, payload);
                         if (res.Length > 0)
                         {
-                            Logger.Error("Error posting events: {0}", res);
-                            Logger.Debug("Payload: {0}", payload);
+                            // Do not post as Error as this goes to event log by default and may result in loop
+                            Logger.Warn("Error posting events: {0}", res);
+                            Logger.Warn("Payload: {0}", payload);
                         }
                         eventJsonList.Clear();
                     }
