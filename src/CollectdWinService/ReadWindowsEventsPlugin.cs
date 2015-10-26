@@ -55,7 +55,7 @@ namespace Netuitive.CollectdWin
                     maxLevel = level
                 };
                 _events.Add(evt);
-                Logger.Info("Added event reader {0}, {1}, {2}", evt.log, evt.provider, evt.maxLevel);
+                Logger.Info("Added event reader: {0}, {1}, {2}", evt.log, evt.provider, evt.maxLevel);
             }
             Logger.Info("ReadWindowsEvents plugin configured");
             
