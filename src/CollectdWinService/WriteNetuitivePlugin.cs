@@ -6,24 +6,15 @@ using BloombergFLP.CollectdWin;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
+using System.IO;
+using System.Text;
 
 namespace Netuitive.CollectdWin
 {
     internal class WriteNetuitivePlugin : ICollectdWritePlugin
     {
-        private const string NETUITIVE_METRIC_JSON_FORMAT = @"{{""id"":""{0}"", ""unit"":""{1}"", ""name"":""{2}""}}";
-
-        private const string NETUITIVE_SAMPLE_JSON_FORMAT = @"{{""metricId"":""{0}"", ""timestamp"":{1}, ""val"":{2}}}";
-
-        private const string NETUITIVE_INGEST_JSON_FORMAT =
-         @"{{""type"": ""{0}"", ""id"":""{1}"", ""name"":""{2}"", ""location"":""{3}""" +
-         @", ""metrics"":[{4}]" +
-         @", ""samples"":[{5}]" +
-         @", ""attributes"":[{6}]" +
-            // @", ""tags"": [{""name"":""testtag"", ""value"":""testtagval""}]" + 
-         @"}} ";
-
-        private const string EVENT_JSON_FORMAT = @"{{""type"": ""{0}"", ""source"":""{1}"", ""data"":{{""elementId"":""{2}"", ""level"":""{3}"", ""message"":""{4}""}}, ""title"":""{5}"", ""timestamp"": {6} }}";
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private string _ingestUrl;
@@ -81,64 +72,6 @@ namespace Netuitive.CollectdWin
             Logger.Info("WriteNetuitive plugin stopped");
         }
 
-        public void Write(Queue<CollectableValue> values)
-        {
-            // Split the complete list into configured batch size
-
-            List<string> metricAttributeJsonList = new List<string>();
-            List<string> eventJsonList = new List<string>();
-            int counter = 0;
-            foreach (CollectableValue value in values)
-            {
-                counter++;
-                if (value is MetricValue)
-                {
-                    metricAttributeJsonList.Add(GetMetricJsonStr((MetricValue)value));
-                }
-                else if (value is AttributeValue)
-                {
-                    metricAttributeJsonList.Add(GetAttributeJsonStr((AttributeValue)value));
-                }
-                else if (value is EventValue)
-                {
-                    eventJsonList.Add(GetEventJsonStr((EventValue)value));
-                }
-                else
-                {
-                    // Collectable value type not handled by this adapter
-                }
-
-                // Send payload if reached end or max size
-                if (metricAttributeJsonList.Count == _payloadSize || eventJsonList.Count == _payloadSize || counter == values.Count)
-                {
-                    if (metricAttributeJsonList.Count > 0)
-                    {
-                        string payload = "[" + string.Join(",", metricAttributeJsonList.ToArray()) + "]";
-                        string res = Util.PostJson(_ingestUrl, payload);
-                        if (res.Length > 0)
-                        {
-                            Logger.Warn("Error posting metrics/attributes: {0}", res);
-                            Logger.Warn("Payload: {0}", payload);
-                        }
-
-                        metricAttributeJsonList.Clear();
-                    }
-                    if (eventJsonList.Count > 0)
-                    {
-                        string payload = "[" + string.Join(",", eventJsonList.ToArray()) + "]";
-                        string res = Util.PostJson(_eventIngestUrl, payload);
-                        if (res.Length > 0)
-                        {
-                            // Do not post as Error as this goes to event log by default and may result in loop
-                            Logger.Warn("Error posting events: {0}", res);
-                            Logger.Warn("Payload: {0}", payload);
-                        }
-                        eventJsonList.Clear();
-                    }
-                }
-            }
-        }
-
         public void Write(CollectableValue value)
         {
             Queue<CollectableValue> entry = new Queue<CollectableValue>();
@@ -146,12 +79,210 @@ namespace Netuitive.CollectdWin
             Write(entry);
         }
 
-        public string GetMetricJsonStr(MetricValue value)
+        public void Write(Queue<CollectableValue> values)
         {
-            var metricList = new List<string>();
-            var sampleList = new List<string>();
 
-            MetricValue metric = (MetricValue)value;
+            // Split into separate lists for each ingest point
+            List<CollectableValue> metricsAndAttributes = null;
+            List<EventValue> events = null;
+            GetSortedValueLists(values, out metricsAndAttributes, out events);
+
+            // Convert metrics and attributes into list of IngestElements
+            List<IngestElement> ingestElementList = ConvertMetricsAndAttributesToIngestElements(metricsAndAttributes);
+
+            // Merge metrics and attributes for the same element together subject to max payload size
+            List<IngestElement> mergedIngestElementList = MergeIngestElements(ingestElementList);
+
+            // Post metrics and attributes
+            PostMetricsAndAttributes(mergedIngestElementList);
+
+            // Convert events into list of IngestEvents
+            List<IngestEvent> eventList = ConvertEventsToIngestEvents(events);
+
+            // Send event payloads
+            PostEvents(eventList);
+
+        }
+
+        protected List<IngestElement> ConvertMetricsAndAttributesToIngestElements(List<CollectableValue> metricsAttributes)
+        {
+            List<IngestElement> ieList = new List<IngestElement>();
+            foreach (CollectableValue value in metricsAttributes)
+            {
+                IngestElement ie = new IngestElement(value.HostName, value.HostName, _defaultElementType, _location);
+
+                if (value is MetricValue)
+                {
+                    List<IngestMetric> outMetrics = null;
+                    List<IngestSample> outSamples = null;
+                    GetIngestMetrics((MetricValue)value, out outMetrics, out outSamples);
+
+                    ie.addMetrics(outMetrics);
+                    ie.addSamples(outSamples);
+                }
+                else if (value is AttributeValue)
+                {
+                    List<IngestAttribute> outAttributes = null;
+                    GetIngestAttributes((AttributeValue)value, out outAttributes);
+                    ie.addAttributes(outAttributes);
+                }
+                ieList.Add(ie);
+            }
+
+            return ieList;
+        }
+
+        protected List<IngestEvent> ConvertEventsToIngestEvents(List<EventValue> events)
+        {
+            List<IngestEvent> eventList = new List<IngestEvent>();
+            foreach (EventValue value in events)
+            {
+
+                // Format title and message
+                string message = value.Message;
+                string title = value.Level + " - " + value.Message;
+                if (title.Length > _maxEventTitleLength)
+                    title = title.Substring(0, _maxEventTitleLength);
+
+                //Convert level to netuitive compatible levels
+                string level = "";
+                switch (value.Level)
+                {
+                    case "CRITICAL":
+                    case "ERROR":
+                        level = "CRITICAL";
+                        break;
+                    case "WARNING":
+                        level = "WARNING";
+                        break;
+                    case "INFO":
+                    case "DEBUG":
+                    default:
+                        level = "INFO";
+                        break;
+                }
+
+                IngestEvent ie = new IngestEvent("INFO", "", title, value.Timestamp * 1000);
+
+                IngestEventData data = new IngestEventData(value.HostName, level, message);
+                ie.setData(data);
+                //TODO - tags
+
+                eventList.Add(ie);
+            }
+
+            return eventList;
+        }
+
+        protected List<IngestElement> MergeIngestElements(List<IngestElement> ieList)
+        {
+            // Merge elements of the same Id together subject to max payload size
+            List<IngestElement> mergedList = new List<IngestElement>();
+            IngestElement current = null;
+            int payloadSize = 0;
+            int counter = 0;
+            foreach (IngestElement element in ieList)
+            {
+                counter++;
+                if (current != null && element.id.Equals(current.id) && payloadSize < _payloadSize && counter < ieList.Count)
+                {
+                    // This element is the same as the current one - merge them
+                    current.mergeWith(element);
+                    payloadSize += element.getPayloadSize();
+                }
+                else
+                {
+                    // This is a different element - add this to the list and start a new
+                    if (current != null)
+                        mergedList.Add(current);
+
+                    current = element;
+                    payloadSize = element.getPayloadSize();
+                }
+            }
+            return mergedList;
+        }
+
+        private void PostEvents(List<IngestEvent> eventList)
+        {
+            // Note - assumes that there are never so many event that we want to split into separate payloads
+            List<string> eventPayloads = new List<string>();
+            foreach (IngestEvent ingestEvent in eventList)
+            {
+                eventPayloads.Add(SerialiseJsonObject(ingestEvent, typeof(IngestEvent)));
+            }
+
+            string eventPayload = "[" + string.Join(",", eventPayloads.ToArray()) + "]";
+            string res = Util.PostJson(_eventIngestUrl, eventPayload);
+            if (res.Length > 0)
+            {
+                Logger.Warn("Error posting events: {0}", res);
+                Logger.Warn("Payload: {0}", eventPayload);
+            }
+        }
+
+        private void PostMetricsAndAttributes(List<IngestElement> mergedIngestElementList)
+        {
+            // Send metric and attribute payloads
+            foreach (IngestElement ingestElement in mergedIngestElementList)
+            {
+                string payload = "[" + SerialiseJsonObject(ingestElement, typeof(IngestElement)) + "]";
+                string res = Util.PostJson(_ingestUrl, payload);
+                if (res.Length > 0)
+                {
+                    Logger.Warn("Error posting metrics/attributes: {0}", res);
+                    Logger.Warn("Payload: {0}", payload);
+                }
+            }
+        }
+
+        protected string SerialiseJsonObject(Object obj, Type type)
+        {
+            // finish off element
+            MemoryStream stream = new MemoryStream();
+            DataContractJsonSerializer ser = new DataContractJsonSerializer(type);
+            ser.WriteObject(stream, obj);
+            string json = Encoding.Default.GetString(stream.ToArray());
+            return json;
+
+        }
+        protected void GetSortedValueLists(Queue<CollectableValue> values, out List<CollectableValue> metricsAndAttributes, out List<EventValue> events)
+        {
+            metricsAndAttributes = new List<CollectableValue>();
+            events = new List<EventValue>();
+
+            foreach (CollectableValue value in values)
+            {
+                if (value is MetricValue)
+                {
+                    metricsAndAttributes.Add(value);
+                }
+                else if (value is AttributeValue)
+                {
+                    metricsAndAttributes.Add(value);
+                }
+                else if (value is EventValue)
+                {
+                    events.Add((EventValue)value);
+                }
+                else
+                {
+                    // Collectable value type not handled by this adapter
+                }
+            }
+
+            // Sort the lists by hostname so we can group them in the payload
+            metricsAndAttributes.Sort((p1, p2) => p1.HostName.CompareTo(p2.HostName));
+            events.Sort((p1, p2) => p1.HostName.CompareTo(p2.HostName));
+        }
+
+
+        public void GetIngestMetrics(MetricValue metric, out List<IngestMetric> metrics, out List<IngestSample> samples)
+        {
+
+            metrics = new List<IngestMetric>();
+            samples = new List<IngestSample>();
+
             string metricId = metric.PluginName;
             if (metric.PluginInstanceName.Length > 0)
                 metricId += "." + metric.PluginInstanceName.Replace(".", "_");
@@ -161,8 +292,8 @@ namespace Netuitive.CollectdWin
             if (metric.Values.Length == 1)
             {
                 // Simple case - just one metric in type
-                metricList.Add(string.Format(NETUITIVE_METRIC_JSON_FORMAT, metricId, metric.TypeName, metric.FriendlyNames[0]));
-                sampleList.Add(string.Format(NETUITIVE_SAMPLE_JSON_FORMAT, metricId, (long)metric.Epoch * 1000, metric.Values[0]));
+                metrics.Add(new IngestMetric(metricId, metric.FriendlyNames[0], metric.TypeName));
+                samples.Add(new IngestSample(metricId, (long)metric.Epoch * 1000, metric.Values[0]));
             }
             else if (metric.Values.Length > 1)
             {
@@ -178,63 +309,208 @@ namespace Netuitive.CollectdWin
                     foreach (DataSource ds in dsList)
                     {
                         // Include the Types.db suffix in the metric name
-                        metricList.Add(string.Format(NETUITIVE_METRIC_JSON_FORMAT, metricId, metric.TypeName, metric.FriendlyNames[ix]));
-                        sampleList.Add(string.Format(NETUITIVE_SAMPLE_JSON_FORMAT, metricId + "." + ds.Name, (long)metric.Epoch * 1000, metric.Values[ix]));
+                        metrics.Add(new IngestMetric(metricId + "." + ds.Name, metric.FriendlyNames[ix], metric.TypeName));
+                        samples.Add(new IngestSample(metricId + "." + ds.Name, (long)metric.Epoch * 1000, metric.Values[ix]));
                         ix++;
                     }
                 }
             }
-            string metricsString = string.Join(",", metricList.ToArray());
-            string samplesString = string.Join(",", sampleList.ToArray());
-
-            string res = string.Format(NETUITIVE_INGEST_JSON_FORMAT, _defaultElementType, value.HostName, value.HostName, _location,
-                metricsString,
-                samplesString,
-                "");
-            return res;
         }
 
-        public string GetAttributeJsonStr(AttributeValue value)
+        protected void GetIngestAttributes(AttributeValue value, out List<IngestAttribute> attributes)
         {
-            string res = string.Format(NETUITIVE_INGEST_JSON_FORMAT, _defaultElementType, value.HostName, value.HostName, _location,
-                "",
-                "",
-                value.getJSON());
-            return res;
-        }
-
-        public string GetEventJsonStr(EventValue value)
-        {
-            string message = value.Message;
-            string title = value.Level + " - " + value.Message;
-            if (title.Length > _maxEventTitleLength)
-                title = title.Substring(0, _maxEventTitleLength);
-
-            title = title.Replace("\"", "\\\"").Replace("\r", "").Replace("\n", "").Replace("\\", "\\\\");
-            message = message.Replace("\"", "\\\"").Replace("\r", "").Replace("\n", "").Replace("\\", "\\\\");
-
-            //Convert level to netuitive compatible levels
-            string level = "";
-            switch (value.Level)
-            {
-                case "CRITICAL":
-                case "ERROR":
-                    level = "CRITICAL";
-                    break;
-                case "WARNING":
-                    level = "WARNING";
-                    break;
-                case "INFO":
-                case "DEBUG":
-                default:
-                    level = "INFO";
-                    break;
-            }
-
-            string json = String.Format(EVENT_JSON_FORMAT, "INFO", "", value.HostName, level, message, title, value.Timestamp * 1000);
-            return json;
+            attributes = new List<IngestAttribute>();
+            attributes.Add(new IngestAttribute(value.Name, value.Value));
         }
     }
+
+    // ******************** DataContract objects for JSON serialisation ******************** 
+    [DataContract]
+    class IngestElement
+    {
+        [DataMember(Order=1)]
+        public string id;
+        [DataMember(Order=2)]
+        public string name;
+        [DataMember(Order=3)]
+        public string type;
+        [DataMember(Order=4)]
+        public string location;
+
+        [DataMember(Order=5)]
+        public List<IngestMetric> metrics = new List<IngestMetric>();
+
+        [DataMember(Order=6)]
+        public List<IngestSample> samples = new List<IngestSample>();
+
+        [DataMember(Order=7)]
+        public List<IngestAttribute> attributes = new List<IngestAttribute>();
+
+        public IngestElement(string id, string name, string type, string location)
+        {
+            this.id = id;
+            this.name = name;
+            this.type = type;
+            this.location = location;
+        }
+
+        public void addMetrics(List<IngestMetric> metrics)
+        {
+            this.metrics.AddRange(metrics);
+        }
+
+        public void addSamples(List<IngestSample> samples)
+        {
+            this.samples.AddRange(samples);
+        }
+
+        public void addAttributes(List<IngestAttribute> attributes)
+        {
+            this.attributes.AddRange(attributes);
+        }
+
+        public int getPayloadSize()
+        {
+            return this.metrics.Count + this.attributes.Count;
+        }
+
+        public void mergeWith(IngestElement that)
+        {
+            if (!this.id.Equals(that.id))
+            {   // shouldn't happen
+                throw new Exception("Bad merge operation");
+            }
+
+            this.addMetrics(that.metrics);
+            this.addSamples(that.samples);
+            this.addAttributes(that.attributes);
+        }
+    }
+
+    [DataContract]
+    class IngestMetric
+    {
+        [DataMember(Order=1)]
+        string id;
+        [DataMember(Order=2)]
+        string unit;
+        [DataMember(Order=3)]
+        string name;
+
+        public IngestMetric(string id, string name, string unit)
+        {
+            this.id = id;
+            this.name = name;
+            this.unit = unit;
+        }
+    }
+
+    [DataContract]
+    class IngestSample
+    {
+        [DataMember(Order=1)]
+        string metricId;
+        [DataMember(Order=2)]
+        long timestamp;
+        [DataMember(Order=3)]
+        double val;
+
+        public IngestSample(string metricId, long timestamp, double val)
+        {
+            this.metricId = metricId;
+            this.timestamp = timestamp;
+            this.val = val;
+        }
+    }
+
+    [DataContract]
+    class IngestAttribute
+    {
+        [DataMember(Order=1)]
+        string name;
+        [DataMember(Order=2)]
+        string value;
+
+        public IngestAttribute(string name, string value)
+        {
+            this.name = name;
+            this.value = value;
+        }
+    }
+
+    [DataContract]
+    class IngestEvent
+    {
+        [DataMember(Order = 1)]
+        public string type;
+        [DataMember(Order = 2)]
+        public string source;
+        [DataMember(Order = 3)]
+        public IngestEventData data;
+
+        [DataMember(Order = 4)]
+        public List<IngestEventTag> tags;
+
+        [DataMember(Order = 5)]
+        public string title;
+
+        [DataMember(Order = 6)]
+        public long timestamp;
+
+        public IngestEvent(string type, string source, string title, long timestamp)
+        {
+            this.type = type;
+            this.source = source;
+            this.title = title;
+            this.timestamp = timestamp;
+        }
+
+        public void setData(IngestEventData data)
+        {
+            this.data = data;
+        }
+
+        public void setTags(List<IngestEventTag> tags)
+        {
+            this.tags = tags;
+        }
+
+    }
+
+    [DataContract]
+    class IngestEventData
+    {
+        [DataMember(Order = 1)]
+        string elementId;
+        [DataMember(Order = 2)]
+        string level;
+        [DataMember(Order = 3)]
+        string message;
+
+        public IngestEventData(string elementId, string level, string message)
+        {
+            this.elementId = elementId;
+            this.level = level;
+            this.message = message;
+        }
+    }
+
+    [DataContract]
+    class IngestEventTag
+    {
+        [DataMember(Order = 1)]
+        string name;
+        [DataMember(Order = 2)]
+        string value;
+
+        public IngestEventTag(string name, string value)
+        {
+            this.name = name;
+            this.value = value;
+        }
+    }
+
+
 }
 
 // ----------------------------------------------------------------------------
