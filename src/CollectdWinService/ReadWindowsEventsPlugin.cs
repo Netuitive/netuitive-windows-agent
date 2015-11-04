@@ -12,7 +12,7 @@ namespace Netuitive.CollectdWin
     internal struct EventQuery
     {
         public string log;
-        public string provider;
+        public string source;
         public int maxLevel;
         public string filterExp;
     }
@@ -50,12 +50,12 @@ namespace Netuitive.CollectdWin
                 EventQuery evt = new EventQuery
                 {
                     log = eventConfig.Log,
-                    provider = eventConfig.Provider,
+                    source = eventConfig.Source,
                     filterExp = eventConfig.FilterExp,
                     maxLevel = level
                 };
                 _events.Add(evt);
-                Logger.Info("Added event reader: {0}, {1}, {2}", evt.log, evt.provider, evt.maxLevel);
+                Logger.Info("Added event reader: {0}, {1}, {2}", evt.log, evt.source, evt.maxLevel);
             }
             Logger.Info("ReadWindowsEvents plugin configured");
             
@@ -76,7 +76,7 @@ namespace Netuitive.CollectdWin
             IList<CollectableValue> collectableValues = new List<CollectableValue>();
             foreach (EventQuery eventQuery in _events)
             {
-                List<EventRecord> records = GetEventRecords(eventQuery.maxLevel, eventQuery.log, eventQuery.provider);
+                List<EventRecord> records = GetEventRecords(eventQuery.maxLevel, eventQuery.log, eventQuery.source);
                 foreach (EventRecord record in records)
                 {
                     // Timestamp from record is machine time, not GMT

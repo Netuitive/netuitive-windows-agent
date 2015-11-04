@@ -19,13 +19,13 @@ namespace BloombergFLP.CollectdWin
             set { base["Location"] = value; }
         }
 
-        [ConfigurationProperty("Type", IsRequired = false)]
+        [ConfigurationProperty("Type", IsRequired = false, DefaultValue="WINSRV")]
         public String Type
         {
             get { return (string)base["Type"]; }
             set { base["Type"] = value; }
         }
-        [ConfigurationProperty("PayloadSize", IsRequired = false)]
+        [ConfigurationProperty("PayloadSize", IsRequired = false, DefaultValue=100)]
         public int PayloadSize
         {
             get { return (int)base["PayloadSize"]; }

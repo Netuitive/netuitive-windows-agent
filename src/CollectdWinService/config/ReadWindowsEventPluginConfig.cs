@@ -25,7 +25,7 @@ namespace BloombergFLP.CollectdWin
         protected override object GetElementKey(ConfigurationElement element)
         {
             var eventConfig = (WindowsEventConfig)element;
-            return (eventConfig.Log + "_" + eventConfig.Provider + "_" +eventConfig.MaxLevel + "_" + eventConfig.FilterExp);
+            return (eventConfig.Log + "_" + eventConfig.Source + "_" +eventConfig.MaxLevel + "_" + eventConfig.FilterExp);
         }
     }
 
@@ -38,11 +38,11 @@ namespace BloombergFLP.CollectdWin
             set { base["Log"] = value; }
         }
 
-        [ConfigurationProperty("Provider", IsRequired = true)]
-        public String Provider
+        [ConfigurationProperty("Source", IsRequired = true)]
+        public String Source
         {
-            get { return (string)base["Provider"]; }
-            set { base["Provider"] = value; }
+            get { return (string)base["Source"]; }
+            set { base["Source"] = value; }
         }
 
         [ConfigurationProperty("MaxLevel", IsRequired = true)]
