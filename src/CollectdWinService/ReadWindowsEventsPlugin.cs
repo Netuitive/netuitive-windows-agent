@@ -110,7 +110,7 @@ namespace Netuitive.CollectdWin
             return collectableValues;
         }
 
-        // 1 = critical, 2=error, 3=warning, 4=information,5=verbose
+        // 1 = critical, 2=error, 3=warning, 4=information,5=verbose, -1=no filter
         private List<EventRecord> GetEventRecords(int level, string logName,string providerName) {
             List<EventRecord> eventRecords = new List<EventRecord>();
             EventRecord eventRecord;
@@ -119,18 +119,19 @@ namespace Netuitive.CollectdWin
             {
                 if (providerName != null && providerName.Length > 0)
                 {
-                    queryString = String.Format(
-                        "*[System/Level <= {0}][System/Provider/@Name = '{1}'][System/TimeCreated[timediff(@SystemTime) <= {2}]]",
-                        level,
-                        providerName,
-                        _interval * 1000);
+                    queryString = "*";
+                    if (level >= 0)
+                        queryString += String.Format("[System/Level <= {0}]", level);
+
+                    queryString += String.Format("[System/Provider/@Name = '{0}'][System/TimeCreated[timediff(@SystemTime) <= {1}]]", providerName, _interval * 1000);
                 }
                 else
                 {
-                    queryString = String.Format(
-                        "*[System[(Level <= {0}) and TimeCreated[timediff(@SystemTime) <= {1}]]]",
-                        level,
-                        _interval * 1000);
+                    queryString = "*[System[";
+                    if (level >= 0)
+                        queryString += String.Format("(Level <= {0}) and ", level);
+                    queryString += String.Format(
+                        "TimeCreated[timediff(@SystemTime) <= {0}]]]", _interval * 1000);
                 }
                 EventLogQuery query = new EventLogQuery(logName, PathType.LogName, queryString);
                 EventLogReader reader = new EventLogReader(query);

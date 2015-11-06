@@ -45,7 +45,7 @@ namespace BloombergFLP.CollectdWin
             set { base["Source"] = value; }
         }
 
-        [ConfigurationProperty("MaxLevel", IsRequired = true)]
+        [ConfigurationProperty("MaxLevel", IsRequired = false, DefaultValue="")]
         public string MaxLevel
         {
             get { return (string)base["MaxLevel"]; }

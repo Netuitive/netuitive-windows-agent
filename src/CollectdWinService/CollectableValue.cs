@@ -138,14 +138,16 @@ namespace BloombergFLP.CollectdWin
                     return 1;
                 case "ERROR":
                     return 2;
+                case "WARN":
+                    return 3;
                 case "WARNING":
                     return 3;
                 case "INFO":
                     return 4;
                 case "DEBUG":
                     return 5;
-                default:
-                    return 5;
+                default: // not specified
+                    return -1;
             }
         }
 
@@ -164,7 +166,7 @@ namespace BloombergFLP.CollectdWin
                 case 5:
                     return "DEBUG";
                 default:
-                    return "UNKNOWN";
+                    return "";
             }
         }
         public override int GetHashCode()
