@@ -10,6 +10,7 @@ namespace BloombergFLP.CollectdWin
     internal abstract class CollectableValue
     {
         public string HostName { get; set; }
+        public string ElementType { get; set; }
         public string PluginName { get; set; }
         public string PluginInstanceName { get; set; }
         public string TypeName { get; set; }
@@ -105,6 +106,29 @@ namespace BloombergFLP.CollectdWin
             return string.Format(JSON_FORMAT, Name, Value);
         }
 
+    }
+
+    internal class RelationValue : CollectableValue
+    {
+        public string Fqn { get; set; }
+
+        private const string JSON_FORMAT = @"{{""fqn"":""{0}""}}";
+
+        public RelationValue(string hostname, string fqn)
+        {
+            Fqn = fqn;
+            HostName = hostname;
+
+            PluginName = "WindowsAttributes";
+            PluginInstanceName = "";
+            TypeName = "";
+            TypeInstanceName = "";
+        }
+
+        public override string getJSON()
+        {
+            return string.Format(JSON_FORMAT, Fqn);
+        }
     }
 
 

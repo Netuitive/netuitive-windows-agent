@@ -15,7 +15,6 @@ namespace Netuitive.CollectdWin
 {
     internal class WriteNetuitivePlugin : ICollectdWritePlugin
     {
-
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private string _ingestUrl;
         private string _eventIngestUrl;
@@ -83,12 +82,12 @@ namespace Netuitive.CollectdWin
         {
 
             // Split into separate lists for each ingest point
-            List<CollectableValue> metricsAndAttributes = null;
+            List<CollectableValue> metricsAttributesAndRelations = null;
             List<EventValue> events = null;
-            GetSortedValueLists(values, out metricsAndAttributes, out events);
+            GetSortedValueLists(values, out metricsAttributesAndRelations, out events);
 
             // Convert metrics and attributes into list of IngestElements
-            List<IngestElement> ingestElementList = ConvertMetricsAndAttributesToIngestElements(metricsAndAttributes);
+            List<IngestElement> ingestElementList = ConvertMetricsAttributesAndRelationsToIngestElements(metricsAttributesAndRelations);
 
             // Merge metrics and attributes for the same element together subject to max payload size
             List<IngestElement> mergedIngestElementList = MergeIngestElements(ingestElementList);
@@ -104,12 +103,13 @@ namespace Netuitive.CollectdWin
 
         }
 
-        protected List<IngestElement> ConvertMetricsAndAttributesToIngestElements(List<CollectableValue> metricsAttributes)
+        protected List<IngestElement> ConvertMetricsAttributesAndRelationsToIngestElements(List<CollectableValue> metricsAttributes)
         {
             List<IngestElement> ieList = new List<IngestElement>();
             foreach (CollectableValue value in metricsAttributes)
             {
-                IngestElement ie = new IngestElement(value.HostName, value.HostName, _defaultElementType, _location);
+                string elementType = (value.ElementType == null) ? _defaultElementType : value.ElementType;
+                IngestElement ie = new IngestElement(value.HostName, value.HostName, elementType, _location);
 
                 if (value is MetricValue)
                 {
@@ -125,6 +125,13 @@ namespace Netuitive.CollectdWin
                     List<IngestAttribute> outAttributes = null;
                     GetIngestAttributes((AttributeValue)value, out outAttributes);
                     ie.addAttributes(outAttributes);
+                }
+                else if (value is RelationValue)
+                {
+                    List<IngestRelation> outRelation = null;
+                    GetIngestRelations((RelationValue)value, out outRelation);
+                    ie.addRelations(outRelation);
+
                 }
                 ieList.Add(ie);
             }
@@ -246,20 +253,16 @@ namespace Netuitive.CollectdWin
             return json;
 
         }
-        protected void GetSortedValueLists(Queue<CollectableValue> values, out List<CollectableValue> metricsAndAttributes, out List<EventValue> events)
+        protected void GetSortedValueLists(Queue<CollectableValue> values, out List<CollectableValue> metricsAttributesAndRelations, out List<EventValue> events)
         {
-            metricsAndAttributes = new List<CollectableValue>();
+            metricsAttributesAndRelations = new List<CollectableValue>();
             events = new List<EventValue>();
 
             foreach (CollectableValue value in values)
             {
-                if (value is MetricValue)
+                if (value is MetricValue || value is AttributeValue || value is RelationValue)
                 {
-                    metricsAndAttributes.Add(value);
-                }
-                else if (value is AttributeValue)
-                {
-                    metricsAndAttributes.Add(value);
+                    metricsAttributesAndRelations.Add(value);
                 }
                 else if (value is EventValue)
                 {
@@ -272,7 +275,7 @@ namespace Netuitive.CollectdWin
             }
 
             // Sort the lists by hostname so we can group them in the payload
-            metricsAndAttributes.Sort((p1, p2) => p1.HostName.CompareTo(p2.HostName));
+            metricsAttributesAndRelations.Sort((p1, p2) => p1.HostName.CompareTo(p2.HostName));
             events.Sort((p1, p2) => p1.HostName.CompareTo(p2.HostName));
         }
 
@@ -322,6 +325,12 @@ namespace Netuitive.CollectdWin
             attributes = new List<IngestAttribute>();
             attributes.Add(new IngestAttribute(value.Name, value.Value));
         }
+
+        protected void GetIngestRelations(RelationValue value, out List<IngestRelation> relations)
+        {
+            relations = new List<IngestRelation>();
+            relations.Add(new IngestRelation(value.Fqn));
+        }
     }
 
     // ******************** DataContract objects for JSON serialisation ******************** 
@@ -346,6 +355,10 @@ namespace Netuitive.CollectdWin
         [DataMember(Order=7)]
         public List<IngestAttribute> attributes = new List<IngestAttribute>();
 
+        [DataMember(Order = 8)]
+        public List<IngestRelation> relations = new List<IngestRelation>();
+
+
         public IngestElement(string id, string name, string type, string location)
         {
             this.id = id;
@@ -369,6 +382,11 @@ namespace Netuitive.CollectdWin
             this.attributes.AddRange(attributes);
         }
 
+        public void addRelations(List<IngestRelation> relations)
+        {
+            this.relations.AddRange(relations);
+        }
+
         public int getPayloadSize()
         {
             return this.metrics.Count + this.attributes.Count;
@@ -384,6 +402,7 @@ namespace Netuitive.CollectdWin
             this.addMetrics(that.metrics);
             this.addSamples(that.samples);
             this.addAttributes(that.attributes);
+            this.addRelations(that.relations);
         }
     }
 
@@ -435,6 +454,18 @@ namespace Netuitive.CollectdWin
         {
             this.name = name;
             this.value = value;
+        }
+    }
+
+    [DataContract]
+    class IngestRelation
+    {
+        [DataMember]
+        string fqn;
+
+        public IngestRelation(string fqn)
+        {
+            this.fqn = fqn;
         }
     }
 
