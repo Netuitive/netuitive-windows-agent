@@ -7,6 +7,10 @@ using System.Text.RegularExpressions;
 using BloombergFLP.CollectdWin;
 using System.Management;
 using System.Reflection;
+using System.Net;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
+using System.IO;
 
 namespace Netuitive.CollectdWin
 {
@@ -21,6 +25,7 @@ namespace Netuitive.CollectdWin
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly IList<Attribute> _attributes;
         private string _hostName;
+        private bool _readEC2InstanceMetadata;
 
         public ReadWindowsAttributesPlugin()
         {
@@ -36,7 +41,7 @@ namespace Netuitive.CollectdWin
             }
 
             _hostName = Util.GetHostName();
-
+            _readEC2InstanceMetadata = config.ReadEC2InstanceMetadata;
             _attributes.Clear();
 
             foreach (EnvironmentVariableConfig attr in config.EnvironmentVariables)
@@ -65,9 +70,16 @@ namespace Netuitive.CollectdWin
 
         public IList<CollectableValue> Read()
         {
-            var metricValueList = new List<CollectableValue>();
+            var collectedValueList = new List<CollectableValue>();
 
-            metricValueList.AddRange(getCommonAttributes());
+            collectedValueList.AddRange(GetCommonAttributes());
+
+            if (_readEC2InstanceMetadata)
+            {
+                // This is only done once on the assumption that the EC2 would have to reboot for these values to change
+                collectedValueList.AddRange(GetEC2Metadata());
+                _readEC2InstanceMetadata = false;
+            }
             foreach (Attribute attribute in _attributes)
             {
                 try
@@ -75,7 +87,7 @@ namespace Netuitive.CollectdWin
                     string value = Environment.GetEnvironmentVariable(attribute.variableName);
                     AttributeValue attr = new AttributeValue(_hostName, attribute.name, value);
                     attr.HostName = _hostName;
-                    metricValueList.Add(attr);
+                    collectedValueList.Add(attr);
 
                 }
                 catch (Exception ex)
@@ -83,10 +95,66 @@ namespace Netuitive.CollectdWin
                     Logger.Error(string.Format("Failed to collect attribute: {0}", attribute.variableName), ex);
                 }
             }
-            return (metricValueList);
+            return collectedValueList;
         }
 
-        private IList<CollectableValue> getCommonAttributes()
+
+        private IList<CollectableValue> GetEC2Metadata()
+        {
+            IList<CollectableValue> values = new List<CollectableValue>();
+
+            //This URL is not configurable - see http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html
+            string url = "http://169.254.169.254/latest/dynamic/instance-identity/document";
+
+            try
+            {
+                // Using HttpWebRequest instead of WebClient so we can set the timeout to something less than default 100 seconds
+                var http = (HttpWebRequest)WebRequest.Create(url);
+                http.Timeout = 5000; // This URL is locally routed so should respond v. fast. If it doesn't chances are this isn't an EC2.
+                var response = http.GetResponse();
+                EC2InstanceIdentity ec2;
+
+                using (var stream = response.GetResponseStream())
+                {
+                    DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(EC2InstanceIdentity));
+                    ec2 = (EC2InstanceIdentity)ser.ReadObject(stream);
+                }
+
+                if (ec2 != null)
+                {
+                    // Deserialize json response into attribute pairs
+                    values.Add(new AttributeValue(_hostName, "accountId", ec2.accountId));
+                    values.Add(new AttributeValue(_hostName, "architecture", ec2.architecture));
+                    values.Add(new AttributeValue(_hostName, "availabilityZone", ec2.availabilityZone));
+                    values.Add(new AttributeValue(_hostName, "billingProducts", String.Join(",", ec2.billingProducts)));
+                    values.Add(new AttributeValue(_hostName, "devpayProductCodes", ec2.devpayProductCodes));
+                    values.Add(new AttributeValue(_hostName, "imageId", ec2.imageId));
+                    values.Add(new AttributeValue(_hostName, "instanceId", ec2.instanceId));
+                    values.Add(new AttributeValue(_hostName, "instanceType", ec2.instanceType));
+                    values.Add(new AttributeValue(_hostName, "kernelId", ec2.kernelId));
+                    values.Add(new AttributeValue(_hostName, "pendingTime", ec2.pendingTime));
+                    values.Add(new AttributeValue(_hostName, "privateIp", ec2.privateIp));
+                    values.Add(new AttributeValue(_hostName, "ramdiskId", ec2.ramdiskId));
+                    values.Add(new AttributeValue(_hostName, "region", ec2.region));
+                    values.Add(new AttributeValue(_hostName, "version", ec2.version));
+
+                    // Create relationship pair
+                    values.Add(new RelationValue(_hostName, String.Format("{0}:{1}", ec2.region, ec2.instanceId)));
+                }
+                else
+                {
+                    Logger.Error("Failed to get EC2 instance metadata from {0}", url);
+                }            
+            }
+            catch (System.Net.WebException ex)
+            {
+                Logger.Error("Error getting EC2 instance metadata from {0}", url, ex);
+            }
+
+            return values;
+        }
+
+        private IList<CollectableValue> GetCommonAttributes()
         {
             // Return standard attributes
             IList<CollectableValue> attributes = new List<CollectableValue>();
@@ -121,7 +189,7 @@ namespace Netuitive.CollectdWin
             {
                 Logger.Error("Failed to get system memory", ex);
             }
-            AttributeValue ram = new AttributeValue(_hostName, "ram", totalRAM.ToString());
+            AttributeValue ram = new AttributeValue(_hostName, "ram bytes", totalRAM.ToString());
             attributes.Add(ram);
             return attributes;
 
@@ -129,8 +197,57 @@ namespace Netuitive.CollectdWin
     }
 }
 
+// ******************** DataContract objects for JSON serialisation ******************** 
+/*{
+  "instanceId" : "i-32b83cdb",
+  "billingProducts" : [ "bp-6ba54002" ],
+  "accountId" : "973100236690",
+  "imageId" : "ami-478d782c",
+  "instanceType" : "t2.micro",
+  "kernelId" : null,
+  "ramdiskId" : null,
+  "pendingTime" : "2015-07-17T14:22:35Z",
+  "architecture" : "x86_64",
+  "region" : "us-east-1",
+  "version" : "2010-08-31",
+  "availabilityZone" : "us-east-1e",
+  "privateIp" : "172.31.6.181",
+  "devpayProductCodes" : null
+}
+*/
+[DataContract]
+class EC2InstanceIdentity
+{
+    [DataMember]
+    public string instanceId { get; set; }
+    [DataMember]
+    public string[] billingProducts { get; set; }
+    [DataMember]
+    public string accountId { get; set; }
+    [DataMember]
+    public string imageId { get; set; }
+    [DataMember]
+    public string instanceType { get; set; }
+    [DataMember]
+    public string kernelId { get; set; }
+    [DataMember]
+    public string ramdiskId { get; set; }
+    [DataMember]
+    public string pendingTime { get; set; }
+    [DataMember]
+    public string architecture { get; set; }
+    [DataMember]
+    public string region { get; set; }
+    [DataMember]
+    public string version { get; set; }
+    [DataMember]
+    public string availabilityZone { get; set; }
+    [DataMember]
+    public string privateIp { get; set; }
+    [DataMember]
+    public string devpayProductCodes { get; set; }
 
-
+}
 
 
 // ----------------------------------------------------------------------------
