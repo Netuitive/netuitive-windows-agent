@@ -12,6 +12,13 @@ namespace BloombergFLP.CollectdWin
             get { return (WindowsEnvironmentVariableCollection)base["EnvironmentVariables"]; }
             set { base["EnvironmentVariables"] = value; }
         }
+
+        [ConfigurationProperty("ReadEC2InstanceMetadata", IsRequired = false, DefaultValue = false)]
+        public Boolean ReadEC2InstanceMetadata
+        {
+            get { return (Boolean)base["ReadEC2InstanceMetadata"]; }
+            set { base["ReadEC2InstanceMetadata"] = value; }
+        }
     }
 
     public class WindowsEnvironmentVariableCollection : ConfigurationElementCollection
