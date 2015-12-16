@@ -143,12 +143,12 @@ namespace Netuitive.CollectdWin
                 }
                 else
                 {
-                    Logger.Error("Failed to get EC2 instance metadata from {0}", url);
+                    Logger.Warn("Failed to get EC2 instance metadata. If this server is not an EC2 update the ReadWindowsAttributes.config file to disable collection.");
                 }            
             }
             catch (System.Net.WebException ex)
             {
-                Logger.Error("Error getting EC2 instance metadata from {0}", url, ex);
+                Logger.Warn("Failed to get EC2 instance metadata. If this server is not an EC2 update the ReadWindowsAttributes.config file to disable collection.", ex);
             }
 
             return values;
