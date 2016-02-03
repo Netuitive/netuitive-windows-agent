@@ -115,6 +115,7 @@ namespace Netuitive.CollectdWin
             List<EventRecord> eventRecords = new List<EventRecord>();
             EventRecord eventRecord;
             string queryString;
+
             try
             {
                 if (providerName != null && providerName.Length > 0)
@@ -137,7 +138,15 @@ namespace Netuitive.CollectdWin
                 EventLogReader reader = new EventLogReader(query);
                 while ((eventRecord = reader.ReadEvent()) != null)
                 {
-                    eventRecords.Add(eventRecord);
+                    // Filter out cases where level=0. This seems undocumented and the severity contradicts the displayed level
+                    if (eventRecord.Level > 0)
+                    {
+                        eventRecords.Add(eventRecord);
+                    }
+                    else
+                    {
+                        Logger.Debug("Dropped event level 0: {0} - {1}", eventRecord.LevelDisplayName, eventRecord.FormatDescription());
+                    }
                 }
             }
             catch (Exception ex)
