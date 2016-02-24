@@ -11,6 +11,7 @@ using System.Net;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.IO;
+using System.Net.Sockets;
 
 namespace Netuitive.CollectdWin
 {
@@ -191,6 +192,28 @@ namespace Netuitive.CollectdWin
             }
             AttributeValue ram = new AttributeValue(_hostName, "ram bytes", totalRAM.ToString());
             attributes.Add(ram);
+
+            try
+            {
+                var host = Dns.GetHostEntry(Dns.GetHostName());
+                List<String> addressList = new List<string>();
+                foreach (var ip in host.AddressList)
+                {
+                    // Only get IP V4 addresses for now
+                    if (ip.AddressFamily == AddressFamily.InterNetwork)
+                        addressList.Add(ip.ToString());
+                }
+
+                string ipStr = string.Join(",", addressList.ToArray());
+
+                AttributeValue ipAttr = new AttributeValue(_hostName, "ip", ipStr);
+                attributes.Add(ipAttr);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Failed to get IP address", ex);
+            }
+
             return attributes;
 
         }
