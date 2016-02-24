@@ -99,7 +99,8 @@ namespace Netuitive.CollectdWin
             List<IngestEvent> eventList = ConvertEventsToIngestEvents(events);
 
             // Send event payloads
-            PostEvents(eventList);
+            if (eventList.Count > 0)
+                PostEvents(eventList);
 
         }
 
