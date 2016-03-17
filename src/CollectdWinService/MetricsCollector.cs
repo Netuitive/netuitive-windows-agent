@@ -108,6 +108,7 @@ namespace BloombergFLP.CollectdWin
             {
                 try
                 {
+                    double collectionStart = Util.GetNow();
                     foreach (ICollectdPlugin plugin in _plugins)
                     {
                         var readPlugin = plugin as ICollectdReadPlugin;
@@ -119,12 +120,13 @@ namespace BloombergFLP.CollectdWin
 
                         double start = Util.GetNow();
                         IList<CollectableValue> collectedValues = readPlugin.Read();
+
                         double end = Util.GetNow();
+                        Logger.Info("Read {1} items in {2:0.00}s [{0}]", readPlugin.GetType().Name, collectedValues.Count, end - start);
 
                         if (collectedValues == null || !collectedValues.Any())
                             continue;
 
-                        Logger.Debug("Read {0} items in {1}ms", collectedValues.Count, end - start);
 
                         lock (_queueLock)
                         {
@@ -138,15 +140,21 @@ namespace BloombergFLP.CollectdWin
                                     _collectedValueQueue.Dequeue();
                                     if ((++numMetricsDropped%1000) == 0)
                                     {
-                                        Logger.Error(
-                                            "Number of metrics dropped : {0}",
-                                            numMetricsDropped);
+                                        Logger.Error("Number of metrics dropped : {0}", numMetricsDropped);
                                     }
                                 }
                             }
                         }
                     }
-                    Thread.Sleep(_interval*1000);
+                    double collectionEnd = Util.GetNow();
+                    double elapsed = collectionEnd - collectionStart;
+                    double revisedInterval = (_interval - elapsed) * 1000;
+                    if (revisedInterval / _interval < 0.1)
+                    {
+                        Logger.Error("Read thread took {0} seconds out of {1} second cycle", elapsed, _interval);
+                    }
+                    if (revisedInterval > 0)
+                        Thread.Sleep((int)revisedInterval);
                 }
                 catch (ThreadInterruptedException)
                 {
@@ -171,7 +179,9 @@ namespace BloombergFLP.CollectdWin
             {
                 try
                 {
-                    while (_collectedValueQueue.Count > 0)
+                    double writeStart = Util.GetNow();
+                    int numValues = _collectedValueQueue.Count;
+                    if (numValues > 0)
                     {
                         // Transfer current queue contents to working list
                         // Individual write plugins can choose how to handle the list of collectable values.
@@ -199,14 +209,25 @@ namespace BloombergFLP.CollectdWin
                                 var writePlugin = plugin as ICollectdWritePlugin;
                                 if (writePlugin == null)
                                 {
-                                    // skip if plugin is not a writeplugin, it might be a readplugin
+                                    // skip if plugin is not a writeplugin
                                     continue;
                                 }
                                 writePlugin.Write(collectedValues);
                             }
                         }
                     }
-                    Thread.Sleep(_interval*1000);
+                    double writeEnd = Util.GetNow();
+                    Logger.Info("Written {0} values in {1:0.00}s", numValues, (writeEnd - writeStart));
+                    
+                    double elapsed = writeEnd - writeStart;
+                    double revisedInterval = (_interval - elapsed) * 1000;
+                    if (revisedInterval / _interval < 0.1)
+                    {
+                        Logger.Error("Write thread took {0} seconds out of {1} second cycle", elapsed, _interval);
+                    }
+                    if (revisedInterval > 0)
+                        Thread.Sleep((int)revisedInterval);
+
                 }
                 catch (ThreadInterruptedException)
                 {

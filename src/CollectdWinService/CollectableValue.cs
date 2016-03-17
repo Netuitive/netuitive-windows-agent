@@ -10,6 +10,7 @@ namespace BloombergFLP.CollectdWin
     internal abstract class CollectableValue
     {
         public string HostName { get; set; }
+        public string ElementType { get; set; }
         public string PluginName { get; set; }
         public string PluginInstanceName { get; set; }
         public string TypeName { get; set; }
@@ -79,13 +80,14 @@ namespace BloombergFLP.CollectdWin
                 Interval, dsTypesStr, dsNamesStr, valStr);
             return (res);
         }
+
     }
 
     internal class AttributeValue : CollectableValue
     {
         public string Name { get; set; }
         public string Value { get; set; }
-        private const string JSONFormat = @"{{""name"":""{0}"", ""value"":""{1}""}}";
+        private const string JSON_FORMAT = @"{{""name"":""{0}"", ""value"":""{1}""}}";
 
         public AttributeValue(string hostname, string name, string value)
         {
@@ -101,7 +103,114 @@ namespace BloombergFLP.CollectdWin
 
         public override string getJSON()
         {
-            return string.Format(JSONFormat, Name, Value);
+            return string.Format(JSON_FORMAT, Name, Value);
+        }
+
+    }
+
+    internal class RelationValue : CollectableValue
+    {
+        public string Fqn { get; set; }
+
+        private const string JSON_FORMAT = @"{{""fqn"":""{0}""}}";
+
+        public RelationValue(string hostname, string fqn)
+        {
+            Fqn = fqn;
+            HostName = hostname;
+
+            PluginName = "WindowsAttributes";
+            PluginInstanceName = "";
+            TypeName = "";
+            TypeInstanceName = "";
+        }
+
+        public override string getJSON()
+        {
+            return string.Format(JSON_FORMAT, Fqn);
+        }
+    }
+
+
+    internal class EventValue : CollectableValue
+    {
+        public long Id { get; set; }
+        public string Message { get; set; }
+        public string Level { get; set; }
+        public long Timestamp { get; set; }
+        private const string JSON_FORMAT = @"{{""level"": ""{0}"", ""source"":""{1}"", ""message"":""{2}"", ""timestamp"": {3} }}";
+
+        public EventValue(string hostname, long timestamp, int nLevel, string message, long id)
+        {
+            Level = EventValue.levelToString(nLevel);
+            Timestamp = timestamp;
+            Message = message;
+            HostName = hostname;
+            Id = id;
+
+            PluginName = "WindowsEvent";
+            PluginInstanceName = "";
+            TypeName = "";
+            TypeInstanceName = "";
+        }
+
+        public static int levelToInt(string level)
+        {
+            switch (level)
+            {
+                case "CRITICAL":
+                    return 1;
+                case "ERROR":
+                    return 2;
+                case "WARN":
+                    return 3;
+                case "WARNING":
+                    return 3;
+                case "INFO":
+                    return 4;
+                case "DEBUG":
+                    return 5;
+                default: // not specified
+                    return -1;
+            }
+        }
+
+        public static string levelToString(int level)
+        {
+            switch (level)
+            {
+                case 1:
+                    return "CRITICAL";
+                case 2:
+                    return "ERROR";
+                case 3:
+                    return "WARN";
+                case 4:
+                    return "INFO";
+                case 5:
+                    return "DEBUG";
+                default:
+                    return "";
+            }
+        }
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null || obj.GetType() != this.GetType())
+                return false;
+
+            EventValue that = (EventValue)obj;
+            return this.Id == that.Id;
+        }
+
+
+        public override string getJSON()
+        {
+            return string.Format(JSON_FORMAT, Level, HostName, Message, Timestamp*1000);
         }
 
     }

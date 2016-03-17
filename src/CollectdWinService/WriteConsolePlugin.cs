@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace BloombergFLP.CollectdWin
 {
-    internal class ConsolePlugin : ICollectdWritePlugin
+    internal class WriteConsolePlugin : ICollectdWritePlugin
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 

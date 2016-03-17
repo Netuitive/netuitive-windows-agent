@@ -13,13 +13,13 @@ namespace BloombergFLP.CollectdWin
 
         public void Configure()
         {
-            var config = ConfigurationManager.GetSection("CollectdWinConfig") as CollectdWinConfig;
+            var config = ConfigurationManager.GetSection("WriteHTTP") as WriteHTTPPluginConfig;
             if (config == null)
             {
-                throw new Exception("Cannot get configuration section : CollectdWinConfig");
+                throw new Exception("Cannot get configuration section : WriteHTTP");
             }
 
-            string url = config.WriteHTTP.Url;
+            string url = config.Url;
             Logger.Info("Posting to: {0}", url);
 
             _url = url;
@@ -56,9 +56,16 @@ namespace BloombergFLP.CollectdWin
 
         public void Write(Queue<CollectableValue> values)
         {
-            foreach (CollectableValue value in values)
+            try
             {
-                Write(value);
+                foreach (CollectableValue value in values)
+                {
+                    Write(value);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("WriteHTTP Failed", ex);
             }
         }
     }

@@ -25,7 +25,7 @@ namespace BloombergFLP.CollectdWin
 
         private void InitializeComponent()
         {
-            ServiceName = "Bloomberg Metrics Collector Service";
+            ServiceName = "CollectdWin Service";
         }
 
         // public accessibility for running as a console application

@@ -22,7 +22,6 @@ namespace BloombergFLP.CollectdWin
         void Write(Queue<CollectableValue> values);
     }
 
-
 }
 
 // ----------------------------------------------------------------------------

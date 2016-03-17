@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using NLog;
+using BloombergFLP.CollectdWin;
 
 namespace BloombergFLP.CollectdWin
 {
@@ -20,9 +21,8 @@ namespace BloombergFLP.CollectdWin
                 Logger.Error("Cannot get configuration section");
                 return;
             }
-            foreach (
-                CollectdWinConfig.PluginConfig pluginConfig in
-                    config.PluginRegistry.Cast<CollectdWinConfig.PluginConfig>()
+            foreach (PluginConfig pluginConfig in
+                    config.PluginRegistry.Cast<PluginConfig>()
                         .Where(pluginConfig => pluginConfig.Enable))
             {
                 _registry[pluginConfig.Name] = pluginConfig.Class;

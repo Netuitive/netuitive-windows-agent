@@ -1,16 +1,27 @@
 ﻿using System;
 using System.Configuration;
+using System.Net;
+using System.Threading;
+using NLog;
 
 namespace BloombergFLP.CollectdWin
 {
     public static class Util
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
+        public static double toEpoch(DateTime time)
+        {
+            TimeSpan t = time - new DateTime(1970, 1, 1);
+            double epoch = t.TotalMilliseconds / 1000;
+            double rounded = Math.Round(epoch, 3);
+            return rounded;
+
+        }
+
         public static double GetNow()
         {
-            TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
-            double epoch = t.TotalMilliseconds/1000;
-            double now = Math.Round(epoch, 3);
-            return (now);
+            return toEpoch(DateTime.Now);
         }
 
         public static string GetHostName()
@@ -24,6 +35,38 @@ namespace BloombergFLP.CollectdWin
                 return config.GeneralSettings.Hostname;
             else
                 return (Environment.MachineName.ToLower());
+        }
+
+        public static string PostJson(string url, string payload)
+        {
+//            Logger.Debug("WriteNetuitive: {0}", payload);
+//            Uri uri = new Uri("http://127.0.0.1:8888");
+            string result = "";
+            try
+            {
+
+                using (var client = new WebClient())
+                {
+                    client.Headers[HttpRequestHeader.ContentType] = "application/json";
+                    result = client.UploadString(url, "POST", payload);
+                }
+            }
+            catch (System.Net.WebException ex)
+            {
+                Exception baseex = ex.GetBaseException();
+                if (baseex as ThreadInterruptedException != null)
+                {
+                    throw baseex;
+                }
+                else
+                {
+                    Logger.Error("Error posting payload to {0}", url, ex);
+                    return ex.Message;
+                }
+            }
+
+            return result;
+
         }
     }
 }

@@ -19,7 +19,7 @@ namespace BloombergFLP.CollectdWin
         public string[] FriendlyNames;
     }
 
-    internal class WindowsPerformanceCounterPlugin : ICollectdReadPlugin
+    internal class ReadWindowsPerfCountersPlugin : ICollectdReadPlugin
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly IList<Metric> _metrics;
@@ -27,23 +27,23 @@ namespace BloombergFLP.CollectdWin
         private int _reloadInterval;
         private double _lastUpdated;
 
-        public WindowsPerformanceCounterPlugin()
+        public ReadWindowsPerfCountersPlugin()
         {
             _metrics = new List<Metric>();
         }
 
         public void Configure()
         {
-            var config = ConfigurationManager.GetSection("CollectdWinConfig") as CollectdWinConfig;
+            var config = ConfigurationManager.GetSection("ReadWindowsPerfCounters") as ReadWindowsPerfCountersPluginConfig;
             if (config == null)
             {
-                throw new Exception("Cannot get configuration section : CollectdWinConfig");
+                throw new Exception("Cannot get configuration section : ReadWindowsPerfCounters");
             }
 
             _hostName = Util.GetHostName();
 
             // Set reload time
-            _reloadInterval = config.WindowsPerformanceCounters.ReloadInterval;
+            _reloadInterval = config.ReloadInterval;
             Logger.Info("Loading metric configuration. Reload interval: {0} sec", _reloadInterval);
 
             _lastUpdated = Util.GetNow();
@@ -51,7 +51,9 @@ namespace BloombergFLP.CollectdWin
             // Load the metrics - this checks for existence
             _metrics.Clear();
             int metricCounter = 0;
-            foreach (CollectdWinConfig.CounterConfig counter in config.WindowsPerformanceCounters.Counters)
+
+
+            foreach (CounterConfig counter in config.Counters)
             {
 
                 if (counter.Instance == "")
@@ -135,17 +137,17 @@ namespace BloombergFLP.CollectdWin
                     }
                 }
             }
-            Logger.Info("WindowsPerformanceCounter plugin configured {0} metrics", metricCounter);
+            Logger.Info("ReadWindowsPerfeCounters plugin configured {0} metrics", metricCounter);
         }
 
         public void Start()
         {
-            Logger.Info("WindowsPerformanceCounter plugin started");
+            Logger.Info("ReadWindowsPerfCountesr plugin started");
         }
 
         public void Stop()
         {
-            Logger.Info("WindowsPerformanceCounter plugin stopped");
+            Logger.Info("ReadWindowsPerfCounters plugin stopped");
         }
 
         public IList<CollectableValue> Read()
@@ -185,9 +187,7 @@ namespace BloombergFLP.CollectdWin
 
                     };
 
-                    TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
-                    double epoch = t.TotalMilliseconds / 1000;
-                    metricValue.Epoch = Math.Round(epoch, 3);
+                    metricValue.Epoch = Util.toEpoch(DateTime.UtcNow);
 
                     metricValueList.Add(metricValue);
                 }
