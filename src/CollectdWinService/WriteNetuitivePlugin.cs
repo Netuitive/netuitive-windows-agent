@@ -148,7 +148,7 @@ namespace Netuitive.CollectdWin
 
                 // Format title and message
                 string message = value.Message;
-                string title = value.Level + " - " + value.Message;
+                string title = value.Title;
                 if (title.Length > _maxEventTitleLength)
                     title = title.Substring(0, _maxEventTitleLength);
 

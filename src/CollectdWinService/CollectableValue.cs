@@ -137,13 +137,15 @@ namespace BloombergFLP.CollectdWin
         public long Id { get; set; }
         public string Message { get; set; }
         public string Level { get; set; }
+        public string Title { get; set; }
         public long Timestamp { get; set; }
-        private const string JSON_FORMAT = @"{{""level"": ""{0}"", ""source"":""{1}"", ""message"":""{2}"", ""timestamp"": {3} }}";
+        private const string JSON_FORMAT = @"{{""level"": ""{0}"", ""source"":""{1}"", ""title"":""{2}"", ""message"":""{3}"", ""timestamp"": {4} }}";
 
-        public EventValue(string hostname, long timestamp, int nLevel, string message, long id)
+        public EventValue(string hostname, long timestamp, int nLevel, string title, string message, long id)
         {
             Level = EventValue.levelToString(nLevel);
             Timestamp = timestamp;
+            Title = title;
             Message = message;
             HostName = hostname;
             Id = id;
@@ -152,27 +154,6 @@ namespace BloombergFLP.CollectdWin
             PluginInstanceName = "";
             TypeName = "";
             TypeInstanceName = "";
-        }
-
-        public static int levelToInt(string level)
-        {
-            switch (level)
-            {
-                case "CRITICAL":
-                    return 1;
-                case "ERROR":
-                    return 2;
-                case "WARN":
-                    return 3;
-                case "WARNING":
-                    return 3;
-                case "INFO":
-                    return 4;
-                case "DEBUG":
-                    return 5;
-                default: // not specified
-                    return -1;
-            }
         }
 
         public static string levelToString(int level)
@@ -210,7 +191,7 @@ namespace BloombergFLP.CollectdWin
 
         public override string getJSON()
         {
-            return string.Format(JSON_FORMAT, Level, HostName, Message, Timestamp*1000);
+            return string.Format(JSON_FORMAT, Level, HostName, Title, Message, Timestamp*1000);
         }
 
     }
