@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Diagnostics;
 using NLog;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace BloombergFLP.CollectdWin
 {
@@ -137,6 +138,9 @@ namespace BloombergFLP.CollectdWin
                     }
                 }
             }
+            // Wait 1 second for the two-valued counters to be ready for next incremental read - see https://msdn.microsoft.com/en-us/library/system.diagnostics.performancecounter.nextvalue(v=vs.110).aspx
+            Thread.Sleep(1000);
+
             Logger.Info("ReadWindowsPerfeCounters plugin configured {0} metrics", metricCounter);
         }
 
@@ -218,7 +222,10 @@ namespace BloombergFLP.CollectdWin
                 int ix = 0;
                 foreach (string ctr in counterList)
                 {
-                    metric.Counters.Add(new PerformanceCounter(category, ctr.Trim(), instance));
+                    PerformanceCounter perfCounter = new PerformanceCounter(category, ctr.Trim(), instance);
+                    // Collect a value - this is needed to initialise counters that need two values
+                    perfCounter.NextValue();
+                    metric.Counters.Add(perfCounter);
                     string friendlyName = ctr.Trim();
                     if (instance.Length > 0)
                         friendlyName += " (" + instance + ")";
