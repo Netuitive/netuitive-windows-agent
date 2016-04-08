@@ -3,6 +3,7 @@ using System.Configuration;
 using System.Net;
 using System.Threading;
 using NLog;
+using System.Collections.Generic;
 
 namespace BloombergFLP.CollectdWin
 {
@@ -37,18 +38,17 @@ namespace BloombergFLP.CollectdWin
                 return (Environment.MachineName.ToLower());
         }
 
-        public static string PostJson(string url, string payload)
+        public static KeyValuePair<int, string> PostJson(string url, string payload)
         {
-//            Logger.Debug("WriteNetuitive: {0}", payload);
-//            Uri uri = new Uri("http://127.0.0.1:8888");
-            string result = "";
+            string message = "";
+            int statusCode = 200;
+
             try
             {
-
                 using (var client = new WebClient())
                 {
                     client.Headers[HttpRequestHeader.ContentType] = "application/json";
-                    result = client.UploadString(url, "POST", payload);
+                    message = client.UploadString(url, "POST", payload);
                 }
             }
             catch (System.Net.WebException ex)
@@ -61,12 +61,21 @@ namespace BloombergFLP.CollectdWin
                 else
                 {
                     Logger.Error("Error posting payload to {0}", url, ex);
-                    return ex.Message;
+                    message = ex.Message;
+                    if (ex.Response as HttpWebResponse != null)
+                    {
+                        // Get the actual code
+                        statusCode = ((HttpWebResponse)ex.Response).StatusCode.GetHashCode();
+                    }
+                    else
+                    {
+                        // use a generic client error
+                        statusCode = 400;
+                    }
                 }
             }
 
-            return result;
-
+            return new KeyValuePair<int, string>(statusCode, message);
         }
     }
 }
