@@ -7,6 +7,7 @@ using NLog;
 using BloombergFLP.CollectdWin;
 using System.Text.RegularExpressions;
 
+
 namespace Netuitive.CollectdWin
 {
     internal struct EventQuery
@@ -114,11 +115,39 @@ namespace Netuitive.CollectdWin
                 }
                 else 
                 {
-                    // Too many events - reduce to summary using attributes of the first
-                    EventRecord record = filteredRecords[0];
-                    string message = string.Format("Received {0} events", filteredRecords.Count);
+                    // Too many events - summarise by counting events by application,level and code
+                    Dictionary<string, int> detailMap = new Dictionary<string, int>();
+                    int minLevel = 999; // used to get the most severe event in the period for the summary level
+                    filteredRecords.ForEach(delegate(EventRecord record) {
+                        string key = string.Format("{0} in {1} ({2})", record.LevelDisplayName, record.ProviderName, record.Id);
+
+                        if (record.Level.Value < minLevel)
+                            minLevel = record.Level.Value;
+
+                        if (detailMap.ContainsKey(key))
+                        {
+                            detailMap[key]  = detailMap[key] + 1;
+                        }
+                        else
+                        {
+                            detailMap.Add(key, 1);
+                        }
+                    });
+
+                    List<KeyValuePair<string, int>> detailList = new List<KeyValuePair<string,int>>();
+                    foreach (string key in detailMap.Keys) {
+                        detailList.Add(new KeyValuePair<string,int>(key, detailMap[key]));
+                    }
+                    detailList.Sort(delegate(KeyValuePair<string, int> pair1, KeyValuePair<string, int> pair2){return -pair1.Value.CompareTo(pair2.Value);});
+
+                    string[] messageLines = new string[detailList.Count];
+
+                    int ix = 0;
+                    foreach(KeyValuePair<string, int> pair in detailList) {
+                        messageLines[ix++] = pair.Value + " x " + pair.Key;
+                    }
                     string title = string.Format("{0} ({1} events)", eventQuery.title, filteredRecords.Count);
-                    EventValue newevent = new EventValue(_hostName, collectionTime, record.Level.Value, title, message, 0);
+                    EventValue newevent = new EventValue(_hostName, collectionTime, minLevel, title, String.Join(", ", messageLines), 0);
                     collectableValues.Add(newevent);
                     totalEvents += filteredRecords.Count;
                 }
