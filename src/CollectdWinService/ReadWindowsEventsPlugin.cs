@@ -29,6 +29,8 @@ namespace Netuitive.CollectdWin
         private readonly IList<EventQuery> _events;
         private string _hostName;
         private int _interval;
+        private int _intervalMultiplier;
+        private long _intervalCounter;
 
         public ReadWindowsEventsPlugin()
         {
@@ -46,8 +48,9 @@ namespace Netuitive.CollectdWin
 
             _interval = baseConfig.GeneralSettings.Interval;
             _hostName = Util.GetHostName();
+            _intervalMultiplier = config.IntervalMultiplier;
+            _intervalCounter = 0;
             _events.Clear();
-            
             
             foreach (WindowsEventConfig eventConfig in config.Events)
             {
@@ -83,9 +86,14 @@ namespace Netuitive.CollectdWin
 
         public IList<CollectableValue> Read()
         {
+            // Only collect events and event metric every nth interval
+            if (_intervalCounter++ % _intervalMultiplier != 0)
+                return new List<CollectableValue>();
+
             IList<CollectableValue> collectableValues = new List<CollectableValue>();
             long totalEvents = 0;
             long collectionTime = (long)(Util.toEpoch(DateTime.UtcNow));
+
             List<long> recordIds = new List<long>();
             foreach (EventQuery eventQuery in _events)
             {
@@ -93,12 +101,13 @@ namespace Netuitive.CollectdWin
 
                 // Filter the events - event ID must be in target range, description must match regex and we mustn't have already read this event record ID in another query 
                 Regex filterExp = new Regex(eventQuery.filterExp, RegexOptions.None);
-                List<EventRecord> filteredRecords = records.FindAll(delegate(EventRecord record) {
+                List<EventRecord> filteredRecords = records.FindAll(delegate(EventRecord record)
+                {
                     return !recordIds.Contains((long)record.RecordId) && record.Id >= eventQuery.minEventId && record.Id <= eventQuery.maxEventId && filterExp.IsMatch(record.FormatDescription());
                 });
 
                 // Add these record IDs to dedupe list so we don't capture them again in a later query
-                filteredRecords.ForEach(delegate(EventRecord record) { recordIds.Add((long)record.RecordId);});
+                filteredRecords.ForEach(delegate(EventRecord record) { recordIds.Add((long)record.RecordId); });
 
                 if (filteredRecords.Count <= eventQuery.maxPerCycle)
                 {
@@ -113,12 +122,13 @@ namespace Netuitive.CollectdWin
                         totalEvents++;
                     }
                 }
-                else 
+                else
                 {
                     // Too many events - summarise by counting events by application,level and code
                     Dictionary<string, int> detailMap = new Dictionary<string, int>();
                     int minLevel = 999; // used to get the most severe event in the period for the summary level
-                    filteredRecords.ForEach(delegate(EventRecord record) {
+                    filteredRecords.ForEach(delegate(EventRecord record)
+                    {
                         string key = string.Format("{0} in {1} ({2})", record.LevelDisplayName, record.ProviderName, record.Id);
 
                         if (record.Level.Value < minLevel)
@@ -126,7 +136,7 @@ namespace Netuitive.CollectdWin
 
                         if (detailMap.ContainsKey(key))
                         {
-                            detailMap[key]  = detailMap[key] + 1;
+                            detailMap[key] = detailMap[key] + 1;
                         }
                         else
                         {
@@ -134,16 +144,18 @@ namespace Netuitive.CollectdWin
                         }
                     });
 
-                    List<KeyValuePair<string, int>> detailList = new List<KeyValuePair<string,int>>();
-                    foreach (string key in detailMap.Keys) {
-                        detailList.Add(new KeyValuePair<string,int>(key, detailMap[key]));
+                    List<KeyValuePair<string, int>> detailList = new List<KeyValuePair<string, int>>();
+                    foreach (string key in detailMap.Keys)
+                    {
+                        detailList.Add(new KeyValuePair<string, int>(key, detailMap[key]));
                     }
-                    detailList.Sort(delegate(KeyValuePair<string, int> pair1, KeyValuePair<string, int> pair2){return -pair1.Value.CompareTo(pair2.Value);});
+                    detailList.Sort(delegate(KeyValuePair<string, int> pair1, KeyValuePair<string, int> pair2) { return -pair1.Value.CompareTo(pair2.Value); });
 
                     string[] messageLines = new string[detailList.Count];
 
                     int ix = 0;
-                    foreach(KeyValuePair<string, int> pair in detailList) {
+                    foreach (KeyValuePair<string, int> pair in detailList)
+                    {
                         messageLines[ix++] = pair.Value + " x " + pair.Key;
                     }
                     string title = string.Format("{0} ({1} events)", eventQuery.title, filteredRecords.Count);
@@ -151,8 +163,8 @@ namespace Netuitive.CollectdWin
                     collectableValues.Add(newevent);
                     totalEvents += filteredRecords.Count;
                 }
-            }   
-            
+            }
+
             // Add event count metric
             MetricValue eventCountMetric = new MetricValue
             {
@@ -161,17 +173,19 @@ namespace Netuitive.CollectdWin
                 PluginInstanceName = "",
                 TypeName = "count",
                 TypeInstanceName = "event_count",
-                Values = new double[]{totalEvents},
-                FriendlyNames = new string[]{"Windows Event Count"},
+                Values = new double[] { totalEvents },
+                FriendlyNames = new string[] { "Windows Event Count" },
                 Epoch = collectionTime
             };
             collectableValues.Add(eventCountMetric);
+
             return collectableValues;
         }
 
         // 1 = critical, 2=error, 3=warning, 4=information,5=verbose, -1=no filter
         private List<EventRecord> GetEventRecords(int minLevel, int maxLevel, string logName,string providerName) {
             List<EventRecord> eventRecords = new List<EventRecord>();
+            long eventInterval = _intervalMultiplier * _interval * 1000;
             EventRecord eventRecord;
             string queryString;
 
@@ -179,11 +193,11 @@ namespace Netuitive.CollectdWin
             {
                 if (providerName != null && providerName.Length > 0)
                 {
-                    queryString = String.Format("*[System[(Level >= {0}) and (Level <= {1}) and Provider/@Name = '{2}' and TimeCreated[timediff(@SystemTime) <= {3}]]]", minLevel, maxLevel, providerName, _interval * 1000);
+                    queryString = String.Format("*[System[(Level >= {0}) and (Level <= {1}) and Provider/@Name = '{2}' and TimeCreated[timediff(@SystemTime) <= {3}]]]", minLevel, maxLevel, providerName, eventInterval);
                 }
                 else
                 {
-                    queryString = String.Format("*[System[(Level >= {0}) and (Level <= {1}) and TimeCreated[timediff(@SystemTime) <= {2}]]]", minLevel, maxLevel, _interval * 1000);
+                    queryString = String.Format("*[System[(Level >= {0}) and (Level <= {1}) and TimeCreated[timediff(@SystemTime) <= {2}]]]", minLevel, maxLevel, eventInterval);
                 }
                 EventLogQuery query = new EventLogQuery(logName, PathType.LogName, queryString);
                 EventLogReader reader = new EventLogReader(query);
