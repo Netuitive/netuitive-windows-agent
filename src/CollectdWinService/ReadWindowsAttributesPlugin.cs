@@ -93,7 +93,7 @@ namespace Netuitive.CollectdWin
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(string.Format("Failed to collect attribute: {0}", attribute.variableName), ex);
+                    Logger.Warn(string.Format("Failed to collect attribute: {0}", attribute.variableName), ex);
                 }
             }
             return collectedValueList;
@@ -188,7 +188,7 @@ namespace Netuitive.CollectdWin
             }
             catch (Exception ex)
             {
-                Logger.Error("Failed to get system memory", ex);
+                Logger.Warn("Failed to get system memory", ex);
             }
             AttributeValue ram = new AttributeValue(_hostName, "ram bytes", totalRAM.ToString());
             attributes.Add(ram);
@@ -211,7 +211,7 @@ namespace Netuitive.CollectdWin
             }
             catch (Exception ex)
             {
-                Logger.Error("Failed to get IP address", ex);
+                Logger.Warn("Failed to get IP address", ex);
             }
 
             return attributes;

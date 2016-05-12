@@ -12,6 +12,13 @@ namespace BloombergFLP.CollectdWin
             get { return (WindowsEventCollection)base["Events"]; }
             set { base["Events"] = value; }
         }
+
+        [ConfigurationProperty("IntervalMultiplier", IsRequired = false, DefaultValue = 5)]
+        public int IntervalMultiplier
+        {
+            get { return (int)base["IntervalMultiplier"]; }
+            set { base["IntervalMultiplier"] = value; }
+        }
     }
 
     public sealed class WindowsEventCollection : ConfigurationElementCollection

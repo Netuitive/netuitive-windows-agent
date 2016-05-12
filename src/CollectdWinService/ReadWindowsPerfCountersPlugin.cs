@@ -197,7 +197,7 @@ namespace BloombergFLP.CollectdWin
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(string.Format("Failed to collect metric: {0}, {1}, {2}", metric.Category, metric.Instance, metric.CounterName), ex);
+                    Logger.Warn(string.Format("Failed to collect metric: {0}, {1}, {2}", metric.Category, metric.Instance, metric.CounterName), ex);
                 }
             }
             return (metricValueList);
