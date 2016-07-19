@@ -19,6 +19,14 @@ namespace BloombergFLP.CollectdWin
             get { return (Boolean)base["ReadEC2InstanceMetadata"]; }
             set { base["ReadEC2InstanceMetadata"] = value; }
         }
+
+        [ConfigurationProperty("ReadIPAddress", IsRequired = false, DefaultValue = true)]
+        public Boolean ReadIPAddress
+        {
+            get { return (Boolean)base["ReadIPAddress"]; }
+            set { base["ReadIPAddress"] = value; }
+        }
+
     }
 
     public class WindowsEnvironmentVariableCollection : ConfigurationElementCollection
