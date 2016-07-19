@@ -27,6 +27,7 @@ namespace Netuitive.CollectdWin
         private readonly IList<Attribute> _attributes;
         private string _hostName;
         private bool _readEC2InstanceMetadata;
+        private bool _readIPAddress;
 
         public ReadWindowsAttributesPlugin()
         {
@@ -43,6 +44,7 @@ namespace Netuitive.CollectdWin
 
             _hostName = Util.GetHostName();
             _readEC2InstanceMetadata = config.ReadEC2InstanceMetadata;
+            _readIPAddress = config.ReadIPAddress;
             _attributes.Clear();
 
             foreach (EnvironmentVariableConfig attr in config.EnvironmentVariables)
@@ -210,27 +212,29 @@ namespace Netuitive.CollectdWin
             AttributeValue ram = new AttributeValue(_hostName, "ram", BytesToString(totalRAM));
             attributes.Add(ram);
 
-            try
+            if (_readIPAddress)
             {
-                var host = Dns.GetHostEntry(Dns.GetHostName());
-                List<String> addressList = new List<string>();
-                foreach (var ip in host.AddressList)
+                try
                 {
-                    // Only get IP V4 addresses for now
-                    if (ip.AddressFamily == AddressFamily.InterNetwork)
-                        addressList.Add(ip.ToString());
+                    var host = Dns.GetHostEntry(Dns.GetHostName());
+                    List<String> addressList = new List<string>();
+                    foreach (var ip in host.AddressList)
+                    {
+                        // Only get IP V4 addresses for now
+                        if (ip.AddressFamily == AddressFamily.InterNetwork)
+                            addressList.Add(ip.ToString());
+                    }
+
+                    string ipStr = string.Join(",", addressList.ToArray());
+
+                    AttributeValue ipAttr = new AttributeValue(_hostName, "ip", ipStr);
+                    attributes.Add(ipAttr);
                 }
-
-                string ipStr = string.Join(",", addressList.ToArray());
-
-                AttributeValue ipAttr = new AttributeValue(_hostName, "ip", ipStr);
-                attributes.Add(ipAttr);
+                catch (Exception ex)
+                {
+                    Logger.Warn("Failed to get IP address", ex);
+                }
             }
-            catch (Exception ex)
-            {
-                Logger.Warn("Failed to get IP address", ex);
-            }
-
             return attributes;
 
         }
