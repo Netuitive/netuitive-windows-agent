@@ -522,6 +522,7 @@ namespace Netuitive.CollectdWin
             this.source = source;
             this.title = title;
             this.timestamp = timestamp;
+            this.tags = new List<IngestEventTag>();
         }
 
         public void setData(IngestEventData data)
