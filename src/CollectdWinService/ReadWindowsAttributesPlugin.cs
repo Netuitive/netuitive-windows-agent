@@ -159,6 +159,17 @@ namespace Netuitive.CollectdWin
             return values;
         }
 
+        static String BytesToString(long byteCount)
+        {
+            string[] suf = { "B", "KB", "MB", "GB", "TB", "PB", "EB" }; //Longs run out around EB
+            if (byteCount == 0)
+                return "0" + suf[0];
+            long bytes = Math.Abs(byteCount);
+            int place = Convert.ToInt32(Math.Floor(Math.Log(bytes, 1024)));
+            double num = Math.Round(bytes / Math.Pow(1024, place), 1);
+            return (Math.Sign(byteCount) * num).ToString() + suf[place];
+        }
+
         private IList<CollectableValue> GetCommonAttributes()
         {
             // Return standard attributes
@@ -194,7 +205,9 @@ namespace Netuitive.CollectdWin
             {
                 Logger.Warn("Failed to get system memory", ex);
             }
-            AttributeValue ram = new AttributeValue(_hostName, "ram bytes", totalRAM.ToString());
+            AttributeValue ramBytes = new AttributeValue(_hostName, "ram bytes", totalRAM.ToString());
+            attributes.Add(ramBytes);
+            AttributeValue ram = new AttributeValue(_hostName, "ram", BytesToString(totalRAM));
             attributes.Add(ram);
 
             try
