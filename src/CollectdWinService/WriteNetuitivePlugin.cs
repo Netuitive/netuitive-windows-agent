@@ -112,7 +112,7 @@ namespace Netuitive.CollectdWin
                 PostEvents(eventList);
 
             double writeEnd = Util.GetNow(); 
-            Logger.Debug("Write took {1:0.00}s", (writeEnd - writeStart));
+            Logger.Info("Write took {0:0.00}s", (writeEnd - writeStart));
         }
 
         protected List<IngestElement> ConvertMetricsAttributesAndRelationsToIngestElements(List<CollectableValue> metricsAttributes)

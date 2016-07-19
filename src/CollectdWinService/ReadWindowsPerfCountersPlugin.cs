@@ -146,7 +146,7 @@ namespace BloombergFLP.CollectdWin
 
         public void Start()
         {
-            Logger.Info("ReadWindowsPerfCountesr plugin started");
+            Logger.Info("ReadWindowsPerfCounters plugin started");
         }
 
         public void Stop()
