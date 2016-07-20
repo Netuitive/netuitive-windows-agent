@@ -216,7 +216,10 @@ namespace Netuitive.CollectdWin
             }
             catch (Exception ex)
             {
-                Logger.Error(ex);
+                LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Unhandled Exception in ReadWindowsEventsPlugin");
+                logEvent.Exception = ex;
+                logEvent.Properties.Add("EventID", ErrorCodes.ERROR_UNHANDLED_EXCEPTION);
+                Logger.Log(logEvent);
             }
 
             return eventRecords;

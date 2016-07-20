@@ -18,7 +18,9 @@ namespace BloombergFLP.CollectdWin
             var config = ConfigurationManager.GetSection("CollectdWinConfig") as CollectdWinConfig;
             if (config == null)
             {
-                Logger.Error("Cannot get configuration section");
+                LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Cannot get configuration section");
+                logEvent.Properties.Add("EventID", ErrorCodes.ERROR_CONFIGURATION_EXCEPTION);
+                Logger.Log(logEvent);
                 return;
             }
             foreach (PluginConfig pluginConfig in
@@ -37,7 +39,9 @@ namespace BloombergFLP.CollectdWin
                 Type classType = Type.GetType(entry.Value);
                 if (classType == null)
                 {
-                    Logger.Error("Cannot create plugin:{0}, class:{1}", entry.Key, entry.Value);
+                    LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, String.Format("Cannot create plugin:{0}, class:{1}", entry.Key, entry.Value));
+                    logEvent.Properties.Add("EventID", ErrorCodes.ERROR_CONFIGURATION_EXCEPTION);
+                    Logger.Log(logEvent);
                     continue;
                 }
                 var plugin = (ICollectdPlugin) Activator.CreateInstance(classType);

@@ -65,7 +65,10 @@ namespace BloombergFLP.CollectdWin
             }
             catch (Exception ex)
             {
-                Logger.Error("WriteHTTP Failed", ex);
+                LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "WriteHTTP failed");
+                logEvent.Exception = ex;
+                logEvent.Properties.Add("EventID", ErrorCodes.ERROR_UNHANDLED_EXCEPTION);
+                Logger.Log(logEvent);
             }
         }
     }

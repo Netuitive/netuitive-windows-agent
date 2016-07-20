@@ -122,6 +122,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Aggregator.cs" />
+    <Compile Include="ErrorCodes.cs" />
     <Compile Include="WriteAmqpPlugin.cs" />
     <Compile Include="CollectableValue.cs" />
     <Compile Include="config\WriteAmqpPluginConfig.cs" />

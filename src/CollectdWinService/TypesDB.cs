@@ -123,14 +123,18 @@ namespace BloombergFLP.CollectdWin
                 Match match = dataSetRegex.Match(line);
                 if (match.Groups.Count < 3)
                 {
-                    Logger.Error("types.db: invalid data set [{0}]", line);
+                    LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, String.Format("types.db: invalid data set [{0}]", line));
+                    logEvent.Properties.Add("EventID", ErrorCodes.ERROR_CONFIGURATION_EXCEPTION);
+                    Logger.Log(logEvent);
                     continue;
                 }
                 string dataSetName = match.Groups[1].Value;
                 MatchCollection matches = dataSourceRegex.Matches(line);
                 if (matches.Count < 1)
                 {
-                    Logger.Error("types.db: invalid data source [{0}]", line);
+                    LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, String.Format("types.db: invalid data source [{0}]", line));
+                    logEvent.Properties.Add("EventID", ErrorCodes.ERROR_CONFIGURATION_EXCEPTION);
+                    Logger.Log(logEvent);
                     continue;
                 }
                 var dataSourceList = new List<DataSource>();
@@ -138,7 +142,9 @@ namespace BloombergFLP.CollectdWin
                 {
                     if (m.Groups.Count != 5)
                     {
-                        Logger.Error("types.db: cannot parse data source [{0}]", line);
+                        LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, String.Format("types.db: cannot parse data source [{0}]", line));
+                        logEvent.Properties.Add("EventID", ErrorCodes.ERROR_CONFIGURATION_EXCEPTION);
+                        Logger.Log(logEvent);
                         dataSourceList.Clear();
                         break;
                     }
@@ -150,14 +156,18 @@ namespace BloombergFLP.CollectdWin
 
                     if (GetDouble(m.Groups[3].Value, out min) != Status.Success)
                     {
-                        Logger.Error("types.db: invalid Min value [{0}]", line);
+                        LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, String.Format("types.db: invalid Min value [{0}]", line));
+                        logEvent.Properties.Add("EventID", ErrorCodes.ERROR_CONFIGURATION_EXCEPTION);
+                        Logger.Log(logEvent);
                         dataSourceList.Clear();
                         break;
                     }
 
                     if (GetDouble(m.Groups[4].Value, out max) != Status.Success)
                     {
-                        Logger.Error("types.db: invalid Max value [{0}]", line);
+                        LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, String.Format("types.db: invalid Max value [{0}]", line));
+                        logEvent.Properties.Add("EventID", ErrorCodes.ERROR_CONFIGURATION_EXCEPTION);
+                        Logger.Log(logEvent);
                         dataSourceList.Clear();
                         break;
                     }

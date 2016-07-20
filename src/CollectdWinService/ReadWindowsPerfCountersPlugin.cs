@@ -92,18 +92,30 @@ namespace BloombergFLP.CollectdWin
                     }
                     catch (ArgumentException ex)
                     {
-                        Logger.Error(string.Format("Failed to parse instance regular expression: category={0}, instance={1}, counter={2}", counter.Category, counter.Instance, counter.Name), ex);
+                        LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Failed to initialise performance counter");
+                        logEvent.Properties.Add("EventID", ErrorCodes.ERROR_CONFIGURATION_EXCEPTION);
+                        Logger.Log(logEvent);
+                        Logger.Warn(string.Format("Failed to parse instance regular expression: category={0}, instance={1}, counter={2}", counter.Category, counter.Instance, counter.Name), ex);
                     }
                     catch (InvalidOperationException ex)
                     {
                         if (ex.Message.ToLower().Contains("category does not exist")) {
                             Logger.Warn(string.Format("Performance Counter not added: Category does not exist: {0}", counter.Category));
-                        } else 
-                            Logger.Error(string.Format("Could not initialise performance counter category: {0}, instance: {1}, counter: {2}", counter.Category, counter.Instance, counter.Name), ex);
+                        }
+                        else
+                        {
+                            LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Failed to initialise performance counter");
+                            logEvent.Properties.Add("EventID", ErrorCodes.ERROR_CONFIGURATION_EXCEPTION);
+                            Logger.Log(logEvent);
+                            Logger.Warn(string.Format("Could not initialise performance counter category: {0}, instance: {1}, counter: {2}", counter.Category, counter.Instance, counter.Name), ex);
+                        }
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error(string.Format("Could not initialise performance counter category: {0}", counter.Category), ex);
+                        LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Failed to initialise performance counter");
+                        logEvent.Properties.Add("EventID", ErrorCodes.ERROR_CONFIGURATION_EXCEPTION);
+                        Logger.Log(logEvent);
+                        Logger.Warn(string.Format("Could not initialise performance counter category: {0}", counter.Category), ex);
                     }
                     if (instances.Length == 0)
                     {
@@ -249,13 +261,23 @@ namespace BloombergFLP.CollectdWin
             {
                 if (ex.Message.ToLower().Contains("category does not exist")) {
                     Logger.Warn(string.Format("Performance Counter not added: Category does not exist: {0}", category));
-                } else 
-                    Logger.Error(string.Format("Could not initialise performance counter category: {0}, instance: {1}, counter: {2}", category, instance, names), ex);
+                }
+                else
+                {
+                    LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Could not initialise performance counter");
+                    logEvent.Properties.Add("EventID", ErrorCodes.ERROR_CONFIGURATION_EXCEPTION);
+                    Logger.Log(logEvent);
+                    Logger.Warn(string.Format("Could not initialise performance counter category: {0}, instance: {1}, counter: {2}", category, instance, names), ex);
+                    return false;
+                }
                 return false;
             }
             catch (Exception ex)
             {
-                Logger.Error(string.Format("Could not initialise performance counter category: {0}, instance: {1}, counter: {2}", category, instance, names), ex);
+                LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Could not initialise performance counter");
+                logEvent.Properties.Add("EventID", ErrorCodes.ERROR_CONFIGURATION_EXCEPTION);
+                Logger.Log(logEvent);
+                Logger.Warn(string.Format("Could not initialise performance counter category: {0}, instance: {1}, counter: {2}", category, instance, names), ex);
                 return false;
             }
         }

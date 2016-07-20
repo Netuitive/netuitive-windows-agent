@@ -36,7 +36,10 @@ namespace BloombergFLP.CollectdWin
                 }
                 catch (Exception exp)
                 {
-                    Logger.Error("BindSocket failed: ", exp);
+                    LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "BindSocket failed");
+                    logEvent.Exception = exp;
+                    logEvent.Properties.Add("EventID", ErrorCodes.ERROR_UNHANDLED_EXCEPTION);
+                    Logger.Log(logEvent);
                 }
                 if (_socket.IsBound)
                     break;
@@ -53,7 +56,10 @@ namespace BloombergFLP.CollectdWin
             }
             catch (Exception exp)
             {
-                Logger.Error("CloseSocket failed: ", exp);
+                LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "CloseSocket failed");
+                logEvent.Exception = exp;
+                logEvent.Properties.Add("EventID", ErrorCodes.ERROR_UNHANDLED_EXCEPTION);
+                Logger.Log(logEvent);
             }
         }
 

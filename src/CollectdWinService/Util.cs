@@ -60,7 +60,6 @@ namespace BloombergFLP.CollectdWin
                 }
                 else
                 {
-                    Logger.Error("Error posting payload to {0}", url, ex);
                     message = ex.Message;
                     if (ex.Response as HttpWebResponse != null)
                     {
@@ -72,6 +71,12 @@ namespace BloombergFLP.CollectdWin
                         // use a generic client error
                         statusCode = 400;
                     }
+
+                    // HTTP return code is used as event log id
+                    LogEventInfo logEvent = LogEventInfo.Create(LogLevel.Error, Logger.Name, String.Format("Error posting payload to {0}", url), ex);
+                    logEvent.Properties.Add("EventID", statusCode);
+                    Logger.Log(logEvent);
+
                 }
             }
 
