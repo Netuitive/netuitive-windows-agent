@@ -10,6 +10,7 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Netuitive.CollectdWin
 {
@@ -307,6 +308,7 @@ namespace Netuitive.CollectdWin
             if (metric.TypeInstanceName.Length > 0)
                 metricId += "." + metric.TypeInstanceName;
 
+            metricId = Regex.Replace(metricId, "[^a-zA-Z0-9\\._-]", "");
             if (metric.Values.Length == 1)
             {
                 // Simple case - just one metric in type
