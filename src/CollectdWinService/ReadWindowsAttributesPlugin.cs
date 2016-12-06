@@ -11,6 +11,7 @@ using System.Net;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.IO;
+using System.Net.Sockets;
 
 namespace Netuitive.CollectdWin
 {
@@ -26,6 +27,7 @@ namespace Netuitive.CollectdWin
         private readonly IList<Attribute> _attributes;
         private string _hostName;
         private bool _readEC2InstanceMetadata;
+        private bool _readIPAddress;
 
         public ReadWindowsAttributesPlugin()
         {
@@ -42,6 +44,7 @@ namespace Netuitive.CollectdWin
 
             _hostName = Util.GetHostName();
             _readEC2InstanceMetadata = config.ReadEC2InstanceMetadata;
+            _readIPAddress = config.ReadIPAddress;
             _attributes.Clear();
 
             foreach (EnvironmentVariableConfig attr in config.EnvironmentVariables)
@@ -92,7 +95,7 @@ namespace Netuitive.CollectdWin
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(string.Format("Failed to collect attribute: {0}", attribute.variableName), ex);
+                    Logger.Warn(string.Format("Failed to collect attribute: {0}", attribute.variableName), ex);
                 }
             }
             return collectedValueList;
@@ -150,8 +153,23 @@ namespace Netuitive.CollectdWin
             {
                 Logger.Warn("Failed to get EC2 instance metadata. If this server is not an EC2 update the ReadWindowsAttributes.config file to disable collection.", ex);
             }
+            catch (Exception ex)
+            {
+                Logger.Warn("Failed to process EC2 instance metadata. If this server is not an EC2 update the ReadWindowsAttributes.config file to disable collection.", ex);
+            }
 
             return values;
+        }
+
+        private String BytesToString(long numBytes)
+        {
+            string[] suffix = { " B", " KB", " MB", " GB", " TB", " PB"};
+            if (numBytes == 0)
+                return "0" + suffix[0];
+            long bytes = Math.Abs(numBytes);
+            int place = Convert.ToInt32(Math.Floor(Math.Log(bytes, 1024)));
+            double num = Math.Round(bytes / Math.Pow(1024, place), 1);
+            return (Math.Sign(numBytes) * num).ToString() + suffix[place];
         }
 
         private IList<CollectableValue> GetCommonAttributes()
@@ -187,10 +205,36 @@ namespace Netuitive.CollectdWin
             }
             catch (Exception ex)
             {
-                Logger.Error("Failed to get system memory", ex);
+                Logger.Warn("Failed to get system memory", ex);
             }
-            AttributeValue ram = new AttributeValue(_hostName, "ram bytes", totalRAM.ToString());
+            AttributeValue ramBytes = new AttributeValue(_hostName, "ram bytes", totalRAM.ToString());
+            attributes.Add(ramBytes);
+            AttributeValue ram = new AttributeValue(_hostName, "ram", BytesToString(totalRAM));
             attributes.Add(ram);
+
+            if (_readIPAddress)
+            {
+                try
+                {
+                    var host = Dns.GetHostEntry(Dns.GetHostName());
+                    List<String> addressList = new List<string>();
+                    foreach (var ip in host.AddressList)
+                    {
+                        // Only get IP V4 addresses for now
+                        if (ip.AddressFamily == AddressFamily.InterNetwork)
+                            addressList.Add(ip.ToString());
+                    }
+
+                    string ipStr = string.Join(",", addressList.ToArray());
+
+                    AttributeValue ipAttr = new AttributeValue(_hostName, "ip", ipStr);
+                    attributes.Add(ipAttr);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn("Failed to get IP address", ex);
+                }
+            }
             return attributes;
 
         }

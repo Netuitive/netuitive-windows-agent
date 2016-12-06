@@ -15,6 +15,9 @@ namespace BloombergFLP.CollectdWin
 
         protected override void OnStart(string[] args)
         {
+            // Request additional service startup time. Configuring the metrics can take a little while
+            RequestAdditionalTime(30000);
+
             StartService(args);
         }
 

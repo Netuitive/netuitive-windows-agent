@@ -119,7 +119,10 @@ namespace BloombergFLP.CollectdWin
                 }
                 catch (Exception exp)
                 {
-                    Logger.Error("Got exception when connecting to AMQP broker : ", exp);
+                    LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Exception when connecting to AMQP broker");
+                    logEvent.Exception = exp;
+                    logEvent.Properties.Add("EventID", ErrorCodes.ERROR_UNHANDLED_EXCEPTION);
+                    Logger.Log(logEvent);
                 }
             }
         }
@@ -136,7 +139,10 @@ namespace BloombergFLP.CollectdWin
                 }
                 catch (Exception exp)
                 {
-                    Logger.Error("Got exception when closing AMQP connection : ", exp);
+                    LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Exception when closing AMQP connection");
+                    logEvent.Exception = exp;
+                    logEvent.Properties.Add("EventID", ErrorCodes.ERROR_UNHANDLED_EXCEPTION);
+                    Logger.Log(logEvent);
                 }
                 _connected = false;
             }

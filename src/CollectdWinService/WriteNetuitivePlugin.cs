@@ -10,6 +10,7 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Netuitive.CollectdWin
 {
@@ -23,6 +24,7 @@ namespace Netuitive.CollectdWin
         private string _location;
         private string _defaultElementType;
         private int _payloadSize;
+        private bool _enabled;
 
         public void Configure()
         {
@@ -57,8 +59,9 @@ namespace Netuitive.CollectdWin
 
             Logger.Info("Maximum payload size: {0}", _payloadSize);
 
-
             _maxEventTitleLength = config.MaxEventTitleLength;
+
+            _enabled = true;
         }
 
         public void Start()
@@ -73,6 +76,9 @@ namespace Netuitive.CollectdWin
 
         public void Write(CollectableValue value)
         {
+            if (!_enabled)
+                return;
+
             Queue<CollectableValue> entry = new Queue<CollectableValue>();
             entry.Enqueue(value);
             Write(entry);
@@ -80,6 +86,10 @@ namespace Netuitive.CollectdWin
 
         public void Write(Queue<CollectableValue> values)
         {
+            if (!_enabled)
+                return;
+
+            double writeStart = Util.GetNow();
 
             // Split into separate lists for each ingest point
             List<CollectableValue> metricsAttributesAndRelations = null;
@@ -99,8 +109,11 @@ namespace Netuitive.CollectdWin
             List<IngestEvent> eventList = ConvertEventsToIngestEvents(events);
 
             // Send event payloads
-            PostEvents(eventList);
+            if (eventList.Count > 0)
+                PostEvents(eventList);
 
+            double writeEnd = Util.GetNow(); 
+            Logger.Info("Write took {0:0.00}s", (writeEnd - writeStart));
         }
 
         protected List<IngestElement> ConvertMetricsAttributesAndRelationsToIngestElements(List<CollectableValue> metricsAttributes)
@@ -147,7 +160,7 @@ namespace Netuitive.CollectdWin
 
                 // Format title and message
                 string message = value.Message;
-                string title = value.Level + " - " + value.Message;
+                string title = value.Title;
                 if (title.Length > _maxEventTitleLength)
                     title = title.Substring(0, _maxEventTitleLength);
 
@@ -218,12 +231,14 @@ namespace Netuitive.CollectdWin
             {
                 eventPayloads.Add(SerialiseJsonObject(ingestEvent, typeof(IngestEvent)));
             }
-
+            
             string eventPayload = "[" + string.Join(",", eventPayloads.ToArray()) + "]";
-            string res = Util.PostJson(_eventIngestUrl, eventPayload);
-            if (res.Length > 0)
+            KeyValuePair<int, string> res = Util.PostJson(_eventIngestUrl, eventPayload);
+
+            bool isOK = ProcessResponseCode(res.Key);
+            if (!isOK)
             {
-                Logger.Warn("Error posting events: {0}", res);
+                Logger.Warn("Error posting events: {0}, {1}", res.Key, res.Value);
                 Logger.Warn("Payload: {0}", eventPayload);
             }
         }
@@ -234,10 +249,11 @@ namespace Netuitive.CollectdWin
             foreach (IngestElement ingestElement in mergedIngestElementList)
             {
                 string payload = "[" + SerialiseJsonObject(ingestElement, typeof(IngestElement)) + "]";
-                string res = Util.PostJson(_ingestUrl, payload);
-                if (res.Length > 0)
+                KeyValuePair<int, string> res = Util.PostJson(_ingestUrl, payload);
+                bool isOK = ProcessResponseCode(res.Key);
+                if (!isOK)
                 {
-                    Logger.Warn("Error posting metrics/attributes: {0}", res);
+                    Logger.Warn("Error posting metrics/attributes: {0}, {1}", res.Key, res.Value);
                     Logger.Warn("Payload: {0}", payload);
                 }
             }
@@ -292,6 +308,8 @@ namespace Netuitive.CollectdWin
             if (metric.TypeInstanceName.Length > 0)
                 metricId += "." + metric.TypeInstanceName;
 
+            metricId = Regex.Replace(metricId, "[ ]", "_"); // Keep spaces as underscores
+            metricId = Regex.Replace(metricId, "[^a-zA-Z0-9\\._-]", ""); // Remove punctuation
             if (metric.Values.Length == 1)
             {
                 // Simple case - just one metric in type
@@ -330,6 +348,19 @@ namespace Netuitive.CollectdWin
         {
             relations = new List<IngestRelation>();
             relations.Add(new IngestRelation(value.Fqn));
+        }
+
+        protected bool ProcessResponseCode(int responseCode)
+        {
+            if (responseCode == 410)
+            {
+                // shutdown this plugin
+                Logger.Fatal("Received plugin shutdown code from server");
+                _enabled = false;
+                return false;
+            } 
+            else return 
+                responseCode >=200 && responseCode < 300;
         }
     }
 
@@ -494,6 +525,7 @@ namespace Netuitive.CollectdWin
             this.source = source;
             this.title = title;
             this.timestamp = timestamp;
+            this.tags = new List<IngestEventTag>();
         }
 
         public void setData(IngestEventData data)

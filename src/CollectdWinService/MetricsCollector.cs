@@ -28,7 +28,9 @@ namespace BloombergFLP.CollectdWin
             var config = ConfigurationManager.GetSection("CollectdWinConfig") as CollectdWinConfig;
             if (config == null)
             {
-                Logger.Error("Cannot get configuration section");
+                LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Cannot get configuration section");
+                logEvent.Properties.Add("EventID", ErrorCodes.ERROR_CONFIGURATION_EXCEPTION);
+                Logger.Log(logEvent);
                 return;
             }
 
@@ -140,7 +142,10 @@ namespace BloombergFLP.CollectdWin
                                     _collectedValueQueue.Dequeue();
                                     if ((++numMetricsDropped%1000) == 0)
                                     {
-                                        Logger.Error("Number of metrics dropped : {0}", numMetricsDropped);
+                                        LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Exceeded max queue length");
+                                        logEvent.Properties.Add("EventID", ErrorCodes.ERROR_EXCEEDED_MAX_QUEUE_LENGTH);
+                                        Logger.Log(logEvent);
+                                        Logger.Warn("Number of metrics dropped : {0}", numMetricsDropped);
                                     }
                                 }
                             }
@@ -151,10 +156,17 @@ namespace BloombergFLP.CollectdWin
                     double revisedInterval = (_interval - elapsed) * 1000;
                     if (revisedInterval / _interval < 0.1)
                     {
-                        Logger.Error("Read thread took {0} seconds out of {1} second cycle", elapsed, _interval);
+                        Logger.Warn("Read thread took {0} seconds out of {1} second cycle", elapsed, _interval);
                     }
                     if (revisedInterval > 0)
                         Thread.Sleep((int)revisedInterval);
+                    else
+                    {
+                        LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Read thread exceeded cycle time");
+                        logEvent.Properties.Add("EventID", ErrorCodes.ERROR_READ_EXCEEDED_CYCLE_TIME);
+                        Logger.Log(logEvent);
+                    }
+
                 }
                 catch (ThreadInterruptedException)
                 {
@@ -162,7 +174,10 @@ namespace BloombergFLP.CollectdWin
                 }
                 catch (Exception exp)
                 {
-                    Logger.Error("ReadThreadProc() got exception : ", exp);
+                    LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Exception in ReadThreadProc()");
+                    logEvent.Exception = exp;
+                    logEvent.Properties.Add("EventID", ErrorCodes.ERROR_UNHANDLED_EXCEPTION);
+                    Logger.Log(logEvent);
                     Thread.Sleep(_interval * 1000);
                 }
             }
@@ -216,17 +231,22 @@ namespace BloombergFLP.CollectdWin
                             }
                         }
                     }
-                    double writeEnd = Util.GetNow();
-                    Logger.Info("Written {0} values in {1:0.00}s", numValues, (writeEnd - writeStart));
-                    
+                    double writeEnd = Util.GetNow();                    
                     double elapsed = writeEnd - writeStart;
                     double revisedInterval = (_interval - elapsed) * 1000;
+
                     if (revisedInterval / _interval < 0.1)
                     {
-                        Logger.Error("Write thread took {0} seconds out of {1} second cycle", elapsed, _interval);
+                        Logger.Warn("Write thread took {0} seconds out of {1} second cycle", elapsed, _interval);
                     }
-                    if (revisedInterval > 0)
+                    if (revisedInterval >= 0)
                         Thread.Sleep((int)revisedInterval);
+                    else
+                    {
+                        LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Write thread exceeded cycle time");
+                        logEvent.Properties.Add("EventID", ErrorCodes.ERROR_WRITE_EXCEEDED_CYCLE_TIME);
+                        Logger.Log(logEvent);
+                    }
 
                 }
                 catch (ThreadInterruptedException)
@@ -235,7 +255,10 @@ namespace BloombergFLP.CollectdWin
                 }
                 catch (Exception exp)
                 {
-                    Logger.Error("WriteThreadProc() got exception : ", exp);
+                    LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Exception in WriteThreadProc()");
+                    logEvent.Exception = exp;
+                    logEvent.Properties.Add("EventID", ErrorCodes.ERROR_UNHANDLED_EXCEPTION);
+                    Logger.Log(logEvent);
                     Thread.Sleep(_interval * 1000);
                 }
             }
@@ -258,7 +281,10 @@ namespace BloombergFLP.CollectdWin
                 }
                 catch (Exception exp)
                 {
-                    Logger.Error("AggregatorThreadProc() got exception : ", exp);
+                    LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "Exception in AggregatorThreadProc()");
+                    logEvent.Exception = exp;
+                    logEvent.Properties.Add("EventID", ErrorCodes.ERROR_UNHANDLED_EXCEPTION);
+                    Logger.Log(logEvent);
                 }
             }
             Logger.Trace("AggregatorThreadProc() return");

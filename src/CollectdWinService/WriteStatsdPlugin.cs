@@ -93,7 +93,10 @@ namespace Netuitive.CollectdWin
             }
             catch (Exception ex)
             {
-                Logger.Error("WriteStatsd failed", ex);
+                LogEventInfo logEvent = new LogEventInfo(LogLevel.Error, Logger.Name, "WriteStatsD failed");
+                logEvent.Exception = ex;
+                logEvent.Properties.Add("EventID", ErrorCodes.ERROR_UNHANDLED_EXCEPTION);
+                Logger.Log(logEvent);
             }
         }
     }
