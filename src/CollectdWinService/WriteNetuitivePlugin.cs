@@ -173,6 +173,7 @@ namespace Netuitive.CollectdWin
                         level = "CRITICAL";
                         break;
                     case "WARNING":
+                    case "WARN":
                         level = "WARNING";
                         break;
                     case "INFO":
