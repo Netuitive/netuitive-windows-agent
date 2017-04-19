@@ -201,11 +201,9 @@ namespace Netuitive.CollectdWin
             List<IngestElement> mergedList = new List<IngestElement>();
             IngestElement current = null;
             int payloadSize = 0;
-            int counter = 0;
             foreach (IngestElement element in ieList)
             {
-                counter++;
-                if (current != null && element.id.Equals(current.id) && payloadSize < _payloadSize && counter < ieList.Count)
+                if (current != null && element.id.Equals(current.id) && payloadSize < _payloadSize)
                 {
                     // This element is the same as the current one - merge them
                     current.mergeWith(element);
@@ -221,6 +219,10 @@ namespace Netuitive.CollectdWin
                     payloadSize = element.getPayloadSize();
                 }
             }
+            // Add the final working element
+            if (current != null)
+                mergedList.Add(current);
+
             return mergedList;
         }
 
