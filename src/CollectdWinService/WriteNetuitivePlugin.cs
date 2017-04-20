@@ -201,11 +201,9 @@ namespace Netuitive.CollectdWin
             List<IngestElement> mergedList = new List<IngestElement>();
             IngestElement current = null;
             int payloadSize = 0;
-            int counter = 0;
             foreach (IngestElement element in ieList)
             {
-                counter++;
-                if (current != null && element.id.Equals(current.id) && payloadSize < _payloadSize && counter < ieList.Count)
+                if (current != null && element.id.Equals(current.id) && payloadSize < _payloadSize)
                 {
                     // This element is the same as the current one - merge them
                     current.mergeWith(element);
@@ -221,6 +219,10 @@ namespace Netuitive.CollectdWin
                     payloadSize = element.getPayloadSize();
                 }
             }
+            // Add the final working element
+            if (current != null)
+                mergedList.Add(current);
+
             return mergedList;
         }
 
@@ -314,7 +316,8 @@ namespace Netuitive.CollectdWin
             if (metric.Values.Length == 1)
             {
                 // Simple case - just one metric in type
-                metrics.Add(new IngestMetric(metricId, metric.FriendlyNames[0], metric.TypeName));
+                string friendlyName = metric.FriendlyNames == null ? metricId : metric.FriendlyNames[0];
+                metrics.Add(new IngestMetric(metricId, friendlyName, metric.TypeName));
                 samples.Add(new IngestSample(metricId, (long)metric.Epoch * 1000, metric.Values[0]));
             }
             else if (metric.Values.Length > 1)
@@ -331,7 +334,9 @@ namespace Netuitive.CollectdWin
                     foreach (DataSource ds in dsList)
                     {
                         // Include the Types.db suffix in the metric name
-                        metrics.Add(new IngestMetric(metricId + "." + ds.Name, metric.FriendlyNames[ix], metric.TypeName));
+                        string friendlyName = metric.FriendlyNames == null ? metricId : metric.FriendlyNames[ix];
+
+                        metrics.Add(new IngestMetric(metricId + "." + ds.Name, friendlyName, metric.TypeName));
                         samples.Add(new IngestSample(metricId + "." + ds.Name, (long)metric.Epoch * 1000, metric.Values[ix]));
                         ix++;
                     }
