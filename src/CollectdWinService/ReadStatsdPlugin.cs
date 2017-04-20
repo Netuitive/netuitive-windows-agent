@@ -85,7 +85,7 @@ namespace BloombergFLP.CollectdWin
 
         public IList<CollectableValue> Read()
         {
-            return (IList<CollectableValue>)(_statsdAggregator.Read());
+            return _statsdAggregator.Read().Cast<CollectableValue>().ToList();
         }
 
         public void HandleMessage(string message)

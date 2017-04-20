@@ -137,7 +137,7 @@ namespace BloombergFLP.CollectdWin
                         if (_timerSum)
                         {
                             MetricValue upperSum = metricVal.DeepCopy();
-                            upperSum.TypeInstanceName = metric.Name + "-Sum";
+                            upperSum.TypeInstanceName = metric.Name + "-sum";
                             upperSum.Values[0] = metric.Lat.Sum;
                             res.Add(upperSum);
                         }
