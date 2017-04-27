@@ -142,7 +142,7 @@ namespace Netuitive.CollectdWin
                     values.Add(new AttributeValue(_hostName, "version", ec2.version));
 
                     // Create relationship pair
-                    values.Add(new RelationValue(_hostName, String.Format("{0}:{1}", ec2.region, ec2.instanceId)));
+                    values.Add(new RelationValue(_hostName, String.Format("{0}:EC2:{1}:{2}", ec2.accountId, ec2.region, ec2.instanceId)));
                 }
                 else
                 {
