@@ -307,7 +307,7 @@ namespace Netuitive.CollectdWin
 
             string metricId = metric.PluginName;
             if (metric.PluginInstanceName.Length > 0)
-                metricId += "." + metric.PluginInstanceName.Replace(".", "_");
+                metricId += "." + metric.PluginInstanceName;
             if (metric.TypeInstanceName.Length > 0)
                 metricId += "." + metric.TypeInstanceName;
 
