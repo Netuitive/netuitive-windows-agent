@@ -316,7 +316,8 @@ namespace Netuitive.CollectdWin
             var dsTypes = new List<string>();
             if (dsList == null)
             {
-                Logger.Debug("Invalid type : {0}, not found in types.db", metric.TypeName);
+                Logger.Error("Invalid type : {0}, not found in types.db", metric.TypeName);
+                return;
             }
             else
             {
