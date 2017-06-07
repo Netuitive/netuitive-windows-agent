@@ -1,0 +1,19 @@
+NLog.dll
+ 
+- https://github.com/NLog/NLog/blob/master/LICENSE.txt
+     
+ 
+RabbitMQ.Client.dll
+ 
+- https://github.com/rabbitmq/rabbitmq-dotnet-client/blob/master/LICENSE-APACHE2
+ 
+ 
+MongoDB.Driver.dll
+MongoDB.Driver.Core.dll
+MongoDB.Bson.dll
+ 
+- https://github.com/mongodb/mongo-csharp-driver/blob/master/License.txt
+ 
+System.Runtime.InteropServices.RuntimeInformation.dll
+ 
+- https://www.visualstudio.com/en-us/productinfo/2017-redistribution-vs

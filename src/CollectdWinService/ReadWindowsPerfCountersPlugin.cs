@@ -250,7 +250,7 @@ namespace BloombergFLP.CollectdWin
                 metric.Multiplier = multiplier;
                 metric.DecimalPlaces = decimalPlaces;
                 metric.CollectdPlugin = collectdPlugin;
-                metric.CollectdPluginInstance = collectdPluginInstance;
+                metric.CollectdPluginInstance = collectdPluginInstance.Replace(".", "_");// Don't allow dots in PluginInstance name - these can be a problem with network interface names
                 metric.CollectdType = collectdType;
                 metric.CollectdTypeInstance = collectdTypeInstance;
                 _metrics.Add(metric);
