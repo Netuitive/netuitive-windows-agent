@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("CollectdWinService")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Bloomberg LP")]
+[assembly: AssemblyCompany("Netuitive, Inc.")]
 [assembly: AssemblyProduct("CollectdWinService")]
-[assembly: AssemblyCopyright("Copyright © Bloomberg LP 2015")]
+[assembly: AssemblyCopyright("Copyright © Netuitive, Inc. 2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -35,4 +35,4 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly: AssemblyVersion("0.7.4.*")]
+[assembly: AssemblyVersion("0.8.1.*")]
