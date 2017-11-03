@@ -25,6 +25,13 @@ namespace BloombergFLP.CollectdWin
             get { return (Boolean)base["EnableAgentHeartbeat"]; }
             set { base["EnableAgentHeartbeat"] = value; }
         }
+
+        [ConfigurationProperty("HeartbeatIntervalMultiplier", IsRequired = false, DefaultValue = 1)]
+        public int HeartbeatIntervalMultiplier
+        {
+            get { return (int)base["HeartbeatIntervalMultiplier"]; }
+            set { base["HeartbeatIntervalMultiplier"] = value; }
+        }
     }
 
     public sealed class SystemChecksCollection : ConfigurationElementCollection
@@ -38,7 +45,7 @@ namespace BloombergFLP.CollectdWin
         protected override object GetElementKey(ConfigurationElement element)
         {
             var checkConfig = (SystemCheckConfig)element;
-            return (checkConfig.Name + "_" + checkConfig.Interval);
+            return (checkConfig.Type + "_" + checkConfig.Name);
         }
     }
 
@@ -65,11 +72,18 @@ namespace BloombergFLP.CollectdWin
             set { base["Alias"] = value; }
         }
 
-        [ConfigurationProperty("Interval", IsRequired = false, DefaultValue=1)]
-        public int Interval
+        [ConfigurationProperty("IntervalMultiplier", IsRequired = false, DefaultValue = 1)]
+        public int IntervalMultiplier
         {
-            get { return (int)base["Interval"]; }
-            set { base["Interval"] = value; }
+            get { return (int)base["IntervalMultiplier"]; }
+            set { base["IntervalMultiplier"] = value; }
+        }
+
+        [ConfigurationProperty("UseRegex", IsRequired = false, DefaultValue = false)]
+        public bool UseRegex
+        {
+            get { return (bool)base["UseRegex"]; }
+            set { base["UseRegex"] = value; }
         }
 
     }

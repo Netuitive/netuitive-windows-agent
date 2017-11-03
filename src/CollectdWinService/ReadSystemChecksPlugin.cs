@@ -21,6 +21,7 @@ namespace Netuitive.CollectdWin
     {
         public string Name;
         public string Alias;
+        public int Interval;
         public CheckType Type;
     }
 
@@ -31,6 +32,7 @@ namespace Netuitive.CollectdWin
         private string _hostName;
         private int _interval;
         private bool _sendAgentHeartbeat;
+        private int _heartbeatInterval;
         public ReadSystemChecksPlugin()
         {
             _checks = new List<CheckConfig>();
@@ -49,6 +51,8 @@ namespace Netuitive.CollectdWin
             _interval = baseConfig.GeneralSettings.Interval;
 
             _sendAgentHeartbeat = config.EnableAgentHeartbeat;
+            _heartbeatInterval = _interval * config.HeartbeatIntervalMultiplier;
+            Logger.Info("Agent heartbeat enabled: {0}, interval: {1}secs", _sendAgentHeartbeat, _heartbeatInterval);
 
             foreach (SystemCheckConfig checkConfig in config.Checks)
             {
@@ -56,10 +60,11 @@ namespace Netuitive.CollectdWin
                 {
                     Name = checkConfig.Name,
                     Alias = String.IsNullOrWhiteSpace(checkConfig.Alias) ? checkConfig.Name : checkConfig.Alias,
-                    Type = checkConfig.Type
+                    Type = checkConfig.Type,
+                    Interval = checkConfig.IntervalMultiplier * _interval
                 };
                 _checks.Add(check);
-                Logger.Info("Added check for {0} '{1}' as '{2}'", check.Type, check.Name, check.Alias);
+                Logger.Info("Added check for {0} '{1}' as '{2}' with interval {3} secs", check.Type, check.Name, check.Alias, check.Interval);
             }
 
             _hostName = Util.GetHostName();
@@ -104,7 +109,7 @@ namespace Netuitive.CollectdWin
                     if (foundService.Status == ServiceControllerStatus.Running)
                     {
                         Logger.Debug("Creating check for service: {0}", checkConfig.Name);
-                        checkList.Add(createCheck(checkConfig.Alias)); 
+                        checkList.Add(createCheck(checkConfig.Alias, checkConfig.Interval)); 
                     }
                     else
                     {
@@ -132,7 +137,7 @@ namespace Netuitive.CollectdWin
                 if (foundProcess != null)
                 {
                     Logger.Debug("Creating check for process: {0}", checkConfig.Name);
-                    checkList.Add(createCheck(checkConfig.Alias));
+                    checkList.Add(createCheck(checkConfig.Alias, checkConfig.Interval));
                 }
                 else
                 {
@@ -144,13 +149,15 @@ namespace Netuitive.CollectdWin
             return checkList;
         }
 
-        private CheckValue createCheck(string name)
+        private CheckValue createCheck(string name, int interval)
         {
             CheckValue check = new CheckValue
             {
                 HostName = _hostName,
                 Name = name,
                 CheckInterval = _interval
+                Name = cleanName,
+                CheckInterval = interval
             };
 
             return check;
