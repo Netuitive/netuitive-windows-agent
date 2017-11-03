@@ -190,7 +190,7 @@ namespace Netuitive.CollectdWin
                 TypeInstanceName = name,
                 Values = new double[1] { value.ToDouble() },
                 FriendlyNames = new string[1] { "" },
-                Epoch = Util.toEpoch(DateTime.UtcNow)
+                Timestamp = Util.toEpoch(DateTime.UtcNow)
             };
 
             return metric;

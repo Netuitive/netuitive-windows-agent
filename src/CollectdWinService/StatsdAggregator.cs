@@ -113,7 +113,7 @@ namespace BloombergFLP.CollectdWin
                     }
                     TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
                     double epoch = t.TotalMilliseconds/1000;
-                    metricVal.Epoch = Math.Round(epoch, 3);
+                    metricVal.Timestamp = Math.Round(epoch, 3);
 
                     res.Add(metricVal);
 

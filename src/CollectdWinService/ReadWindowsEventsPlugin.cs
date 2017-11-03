@@ -175,7 +175,7 @@ namespace Netuitive.CollectdWin
                 TypeInstanceName = "event_count",
                 Values = new double[] { totalEvents },
                 FriendlyNames = new string[] { "Windows Event Count" },
-                Epoch = collectionTime
+                Timestamp = collectionTime
             };
             collectableValues.Add(eventCountMetric);
 
