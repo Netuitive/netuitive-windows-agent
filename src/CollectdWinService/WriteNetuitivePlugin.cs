@@ -18,6 +18,7 @@ namespace Netuitive.CollectdWin
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private string _ingestUrl;
         private string _eventIngestUrl;
+        private string _checkIngestUrl;
         private int _maxEventTitleLength;
 
         private string _location;
@@ -36,7 +37,8 @@ namespace Netuitive.CollectdWin
 
             _ingestUrl = config.Url;
             _eventIngestUrl = _ingestUrl.Replace("/ingest/", "/ingest/events/");
-            Logger.Info("Posting metrics/attributes to:{0}, events to:{1}", _ingestUrl, _eventIngestUrl);
+            _checkIngestUrl = _ingestUrl.Replace("/ingest/", "/check/").Replace("/windows/", "/");
+            Logger.Info("Posting metrics/attributes to:{0}, events to:{1}, chesk to:{2}", _ingestUrl, _eventIngestUrl, _checkIngestUrl);
 
             _location = config.Location;
 
@@ -99,7 +101,7 @@ namespace Netuitive.CollectdWin
 
             WriteEvents(values);
 
-                PostEvents(eventList);
+            WriteChecks(values);
 
             double writeEnd = Util.GetNow(); 
             Logger.Info("Write took {0:0.00}s", (writeEnd - writeStart));
@@ -316,10 +318,31 @@ namespace Netuitive.CollectdWin
             }
         }
 
+        public void WriteChecks(Queue<CollectableValue> values)
         {
+            List<CheckValue> checks = values.OfType<CheckValue>().ToList();
+
+            if (checks.Count > 0)
+                PostChecks(checks);
+
         }
 
+        private void PostChecks(List<CheckValue> checkList)
         {
+            // Note - checks are sent one at a time
+            List<string> eventPayloads = new List<string>();
+            foreach (CheckValue check in checkList)
+            {
+
+                string url = string.Join("/", new string[] { _checkIngestUrl, check.Name, check.HostName,check.CheckInterval.ToString() });
+                KeyValuePair<int, string> res = Util.PostJson(url, _userAgent, "");
+
+                bool isOK = ProcessResponseCode(res.Key);
+                if (!isOK)
+                {
+                    Logger.Warn("Error posting check: {0}, {1}, {2}", url, res.Key, res.Value);
+                }
+            }
         }
 
         protected bool ProcessResponseCode(int responseCode)
