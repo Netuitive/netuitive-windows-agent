@@ -150,6 +150,7 @@
     <Compile Include="config\ReadSystemChecksPluginConfig.cs" />
     <Compile Include="ErrorCodes.cs" />
     <Compile Include="ReadMongoDBPlugin.cs" />
+    <Compile Include="ReadSystemChecksPlugin.cs" />
     <Compile Include="WriteAmqpPlugin.cs" />
     <Compile Include="CollectableValue.cs" />
     <Compile Include="config\WriteAmqpPluginConfig.cs" />
