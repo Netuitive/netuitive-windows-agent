@@ -17,7 +17,6 @@ namespace BloombergFLP.CollectdWin
         public string TypeName { get; set; }
         public string TypeInstanceName { get; set; }
 
-        public int Interval { get; set; }
 
         abstract public string getJSON();
     }
