@@ -191,4 +191,17 @@ namespace BloombergFLP.CollectdWin
         }
 
     }
+
+    internal class CheckValue : CollectableValue
+    {
+        public string Name { get; set; }
+        public int CheckInterval { get; set; }
+        private const string JSON_FORMAT = @"{{""name"": ""{0}"", ""timestamp"":{1},  ""interval"":{2} }}";
+
+        public override string getJSON()
+        {
+            return string.Format(JSON_FORMAT, Name, Timestamp*1000, CheckInterval);
+        }
+
+    }
 }
