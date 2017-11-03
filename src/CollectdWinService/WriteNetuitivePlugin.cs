@@ -262,16 +262,7 @@ namespace Netuitive.CollectdWin
             }
         }
 
-        protected string SerialiseJsonObject(Object obj, Type type)
         {
-            // finish off element
-            MemoryStream stream = new MemoryStream();
-            DataContractJsonSerializer ser = new DataContractJsonSerializer(type);
-            ser.WriteObject(stream, obj);
-            string json = Encoding.Default.GetString(stream.ToArray());
-            return json;
-
-        }
         protected void GetSortedValueLists(Queue<CollectableValue> values, out List<CollectableValue> metricsAttributesAndRelations, out List<EventValue> events)
         {
             metricsAttributesAndRelations = new List<CollectableValue>();
