@@ -58,7 +58,8 @@ namespace Netuitive.CollectdWin
             {
                 CheckConfig check = new CheckConfig
                 {
-                    Name = checkConfig.Name,
+
+                    Name = checkConfig.UseRegex ? checkConfig.Name : "^" + checkConfig.Name + "$",
                     Alias = String.IsNullOrWhiteSpace(checkConfig.Alias) ? checkConfig.Name : checkConfig.Alias,
                     Type = checkConfig.Type,
                     Interval = checkConfig.IntervalMultiplier * _interval
@@ -88,7 +89,7 @@ namespace Netuitive.CollectdWin
 
             if (_sendAgentHeartbeat)
             {
-                checkList.Add(createCheck("heartbeat"));
+                checkList.Add(createCheck("heartbeat", _heartbeatInterval));
             }
 
             checkList.AddRange(CheckServices());
@@ -103,8 +104,10 @@ namespace Netuitive.CollectdWin
             ServiceController[] serviceList = ServiceController.GetServices();
             foreach (CheckConfig checkConfig in _checks.Where(o => o.Type == CheckType.Service).ToList())
             {
-                ServiceController foundService = serviceList.FirstOrDefault(service => service.ServiceName.Equals(checkConfig.Name));
-                if (foundService != null)
+                Regex regex = new Regex(checkConfig.Name, RegexOptions.None);
+
+                List<ServiceController> matches = serviceList.Where(service => regex.IsMatch(service.ServiceName)).ToList();
+                foreach(ServiceController foundService in matches)
                 {
                     if (foundService.Status == ServiceControllerStatus.Running)
                     {
@@ -116,12 +119,12 @@ namespace Netuitive.CollectdWin
                         Logger.Warn("Service '{0}' not running. Check not created.", checkConfig.Name);
                     }
                 }
-                else
+
+                if (matches.Count == 0)
                 {
-                    Logger.Warn("Service '{0}' not found. Check not created.", checkConfig.Name);
+                    Logger.Warn("No services matching '{0}' were found. Check not created.", checkConfig.Name);
                 }
             }
-
             return checkList;
         }
 
@@ -133,15 +136,22 @@ namespace Netuitive.CollectdWin
 
             foreach (CheckConfig checkConfig in _checks.Where(o => o.Type == CheckType.Process).ToList())
             {
-                Process foundProcess = processList.FirstOrDefault(process => process.MainModule.ModuleName.Equals(checkConfig.Name));
-                if (foundProcess != null)
+                Regex regex = new Regex(checkConfig.Name, RegexOptions.None);
+
+                List<Process> matches = processList.Where(process =>
+                {
+                    return regex.IsMatch(process.ProcessName);
+                }).ToList();
+
+                foreach (Process foundProcess in matches)
                 {
                     Logger.Debug("Creating check for process: {0}", checkConfig.Name);
                     checkList.Add(createCheck(checkConfig.Alias, checkConfig.Interval));
                 }
-                else
+
+                if (matches.Count == 0)
                 {
-                    Logger.Warn("Process '{0}' not found. Check not created.", checkConfig.Name);
+                    Logger.Warn("No processes matching '{0}' were found. Check not created.", checkConfig.Name);
                 }
                 
             }
@@ -151,11 +161,10 @@ namespace Netuitive.CollectdWin
 
         private CheckValue createCheck(string name, int interval)
         {
+            string cleanName = name.Replace(",", "_");
             CheckValue check = new CheckValue
             {
                 HostName = _hostName,
-                Name = name,
-                CheckInterval = _interval
                 Name = cleanName,
                 CheckInterval = interval
             };
