@@ -11,18 +11,20 @@ namespace BloombergFLP.CollectdWin
     {
         public string HostName { get; set; }
         public double Timestamp { get; set; }
+
+        abstract public string getJSON();
+    }
+
+    internal abstract class IngestValue: CollectableValue
+    {
         public string ElementType { get; set; }
         public string PluginName { get; set; }
         public string PluginInstanceName { get; set; }
         public string TypeName { get; set; }
         public string TypeInstanceName { get; set; }
-
-
-        abstract public string getJSON();
     }
 
-
-    internal class MetricValue: CollectableValue
+    internal class MetricValue: IngestValue
     {
         private const string MetricJsonFormat =
             @"{{""host"":""{0}"", ""plugin"":""{1}"", ""plugin_instance"":""{2}""," +
@@ -82,7 +84,7 @@ namespace BloombergFLP.CollectdWin
 
     }
 
-    internal class AttributeValue : CollectableValue
+    internal class AttributeValue : IngestValue
     {
         public string Name { get; set; }
         public string Value { get; set; }
@@ -107,7 +109,7 @@ namespace BloombergFLP.CollectdWin
 
     }
 
-    internal class RelationValue : CollectableValue
+    internal class RelationValue : IngestValue
     {
         public string Fqn { get; set; }
 
@@ -148,11 +150,6 @@ namespace BloombergFLP.CollectdWin
             Message = message;
             HostName = hostname;
             Id = id;
-
-            PluginName = "WindowsEvent";
-            PluginInstanceName = "";
-            TypeName = "";
-            TypeInstanceName = "";
         }
 
         public static string levelToString(int level)
