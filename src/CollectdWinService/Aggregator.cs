@@ -66,7 +66,7 @@ namespace BloombergFLP.CollectdWin
                             cEntry.MetricRate.Values[i] = double.NaN;
                         }
                     }
-                    cEntry.MetricRate.Epoch = now;
+                    cEntry.MetricRate.Timestamp = now;
                     _cache[key] = cEntry;
                     return;
                 }
@@ -75,7 +75,7 @@ namespace BloombergFLP.CollectdWin
                     double rawValNew = metricValue.Values[i];
                     double rawValOld = cEntry.RawValues[i];
                     double rawValDiff = rawValNew - rawValOld;
-                    double timeDiff = cEntry.MetricRate.Epoch - now;
+                    double timeDiff = cEntry.MetricRate.Timestamp - now;
 
                     double rateNew = rawValDiff/timeDiff;
 
@@ -131,7 +131,7 @@ namespace BloombergFLP.CollectdWin
                         cEntry.RawValues[i] = metricValue.Values[i];
                     }
 
-                    cEntry.MetricRate.Epoch = now;
+                    cEntry.MetricRate.Timestamp = now;
                     _cache[key] = cEntry;
                 }
             }
@@ -152,7 +152,7 @@ namespace BloombergFLP.CollectdWin
             {
                 removeList.AddRange(from pair in _cache
                     let cEntry = pair.Value
-                    where cEntry.MetricRate.Epoch < expirationTime
+                    where cEntry.MetricRate.Timestamp < expirationTime
                     select pair.Key);
                 if (removeList.Count > 0)
                     Logger.Debug("Removing expired entries: {0}", removeList.Count);

@@ -2,33 +2,32 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
 
 namespace BloombergFLP.CollectdWin
 {
     internal abstract class CollectableValue
     {
         public string HostName { get; set; }
+        public double Timestamp { get; set; }
+
+        abstract public string getJSON();
+    }
+
+    internal abstract class IngestValue: CollectableValue
+    {
         public string ElementType { get; set; }
         public string PluginName { get; set; }
         public string PluginInstanceName { get; set; }
         public string TypeName { get; set; }
         public string TypeInstanceName { get; set; }
-
-        public int Interval { get; set; }
-        public double Epoch { get; set; }
-
-        abstract public string getJSON();
     }
 
-
-    internal class MetricValue: CollectableValue
+    internal class MetricValue: IngestValue
     {
         private const string MetricJsonFormat =
             @"{{""host"":""{0}"", ""plugin"":""{1}"", ""plugin_instance"":""{2}""," +
-            @" ""type"":""{3}"", ""type_instance"":""{4}"", ""time"":{5}, ""interval"":{6}," +
-            @" ""dstypes"":[{7}], ""dsnames"":[{8}], ""values"":[{9}]}}";
+            @" ""type"":""{3}"", ""type_instance"":""{4}"", ""time"":{5}, " +
+            @" ""dstypes"":[{6}], ""dsnames"":[{7}], ""values"":[{8}]}}";
 
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -76,14 +75,14 @@ namespace BloombergFLP.CollectdWin
             string valStr = string.Join(",", Array.ConvertAll(Values, val => val.ToString(CultureInfo.InvariantCulture)));
 
             string res = string.Format(MetricJsonFormat, HostName, PluginName,
-                PluginInstanceName, TypeName, TypeInstanceName, Epoch,
-                Interval, dsTypesStr, dsNamesStr, valStr);
+                PluginInstanceName, TypeName, TypeInstanceName, Timestamp,
+                dsTypesStr, dsNamesStr, valStr);
             return (res);
         }
 
     }
 
-    internal class AttributeValue : CollectableValue
+    internal class AttributeValue : IngestValue
     {
         public string Name { get; set; }
         public string Value { get; set; }
@@ -108,7 +107,7 @@ namespace BloombergFLP.CollectdWin
 
     }
 
-    internal class RelationValue : CollectableValue
+    internal class RelationValue : IngestValue
     {
         public string Fqn { get; set; }
 
@@ -149,11 +148,6 @@ namespace BloombergFLP.CollectdWin
             Message = message;
             HostName = hostname;
             Id = id;
-
-            PluginName = "WindowsEvent";
-            PluginInstanceName = "";
-            TypeName = "";
-            TypeInstanceName = "";
         }
 
         public static string levelToString(int level)
@@ -192,6 +186,19 @@ namespace BloombergFLP.CollectdWin
         public override string getJSON()
         {
             return string.Format(JSON_FORMAT, Level, HostName, Title, Message, Timestamp*1000);
+        }
+
+    }
+
+    internal class CheckValue : CollectableValue
+    {
+        public string Name { get; set; }
+        public int CheckInterval { get; set; }
+        private const string JSON_FORMAT = @"{{""name"": ""{0}"", ""timestamp"":{1},  ""interval"":{2} }}";
+
+        public override string getJSON()
+        {
+            return string.Format(JSON_FORMAT, Name, Timestamp*1000, CheckInterval);
         }
 
     }

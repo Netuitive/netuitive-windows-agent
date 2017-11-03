@@ -203,7 +203,7 @@ namespace BloombergFLP.CollectdWin
 
                     };
 
-                    metricValue.Epoch = Util.toEpoch(DateTime.UtcNow);
+                    metricValue.Timestamp = Util.toEpoch(DateTime.UtcNow);
 
                     metricValueList.Add(metricValue);
                 }

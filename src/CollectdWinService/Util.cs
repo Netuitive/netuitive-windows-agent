@@ -4,6 +4,10 @@ using System.Net;
 using System.Threading;
 using NLog;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
+using System.IO;
+using System.Text;
 
 namespace BloombergFLP.CollectdWin
 {
@@ -38,7 +42,7 @@ namespace BloombergFLP.CollectdWin
                 return (Environment.MachineName.ToLower());
         }
 
-        public static KeyValuePair<int, string> PostJson(string url, string payload)
+        public static KeyValuePair<int, string> PostJson(string url,  string userAgent, string payload)
         {
             string message = "";
             int statusCode = 200;
@@ -48,6 +52,7 @@ namespace BloombergFLP.CollectdWin
                 using (var client = new WebClient())
                 {
                     client.Headers[HttpRequestHeader.ContentType] = "application/json";
+                    client.Headers[HttpRequestHeader.UserAgent] = userAgent;
                     message = client.UploadString(url, "POST", payload);
                 }
             }
@@ -82,8 +87,32 @@ namespace BloombergFLP.CollectdWin
 
             return new KeyValuePair<int, string>(statusCode, message);
         }
+    
+        public static string SerialiseJsonObject(Object obj, Type type)
+        {
+            MemoryStream stream = new MemoryStream();
+            DataContractJsonSerializer ser = new DataContractJsonSerializer(type);
+            ser.WriteObject(stream, obj);
+            string json = Encoding.Default.GetString(stream.ToArray());
+            return json;
+
+        }
     }
 }
+// ----------------------------------------------------------------------------
+// Copyright (C) 2017 Netuitive Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// ---------------
 
 // ----------------------------------------------------------------------------
 // Copyright (C) 2015 Bloomberg Finance L.P.

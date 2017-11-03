@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Diagnostics;
 using NLog;
 using System.Text.RegularExpressions;
-using System.Threading;
 using BloombergFLP.CollectdWin;
 using MongoDB.Driver;
 using MongoDB.Bson;
@@ -190,7 +188,7 @@ namespace Netuitive.CollectdWin
                 TypeInstanceName = name,
                 Values = new double[1] { value.ToDouble() },
                 FriendlyNames = new string[1] { "" },
-                Epoch = Util.toEpoch(DateTime.UtcNow)
+                Timestamp = Util.toEpoch(DateTime.UtcNow)
             };
 
             return metric;

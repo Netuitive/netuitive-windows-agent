@@ -211,7 +211,6 @@ namespace BloombergFLP.CollectdWin
                         if (collectedValues.Count > 0) {
                             foreach (CollectableValue collectedValue in collectedValues)
                             {
-                                collectedValue.Interval = _interval;
                                 if (collectedValue is MetricValue)
                                 {
                                     MetricValue metricValue = (MetricValue)collectedValue;
