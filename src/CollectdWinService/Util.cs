@@ -4,6 +4,10 @@ using System.Net;
 using System.Threading;
 using NLog;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
+using System.IO;
+using System.Text;
 
 namespace BloombergFLP.CollectdWin
 {
@@ -38,7 +42,7 @@ namespace BloombergFLP.CollectdWin
                 return (Environment.MachineName.ToLower());
         }
 
-        public static KeyValuePair<int, string> PostJson(string url, string payload)
+        public static KeyValuePair<int, string> PostJson(string url,  string userAgent, string payload)
         {
             string message = "";
             int statusCode = 200;
@@ -48,6 +52,7 @@ namespace BloombergFLP.CollectdWin
                 using (var client = new WebClient())
                 {
                     client.Headers[HttpRequestHeader.ContentType] = "application/json";
+                    client.Headers[HttpRequestHeader.UserAgent] = userAgent;
                     message = client.UploadString(url, "POST", payload);
                 }
             }

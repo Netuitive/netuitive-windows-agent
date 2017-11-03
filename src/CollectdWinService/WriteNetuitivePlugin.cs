@@ -25,6 +25,7 @@ namespace Netuitive.CollectdWin
         private string _defaultElementType;
         private int _payloadSize;
         private bool _enabled;
+        private string _userAgent;
 
         public void Configure()
         {
@@ -62,6 +63,10 @@ namespace Netuitive.CollectdWin
             _maxEventTitleLength = config.MaxEventTitleLength;
 
             _enabled = true;
+
+            System.Reflection.AssemblyName assemblyName = System.Reflection.Assembly.GetEntryAssembly().GetName();
+            _userAgent = assemblyName.Name + "-" + assemblyName.Version.ToString();
+
         }
 
         public void Start()
