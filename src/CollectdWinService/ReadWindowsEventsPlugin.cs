@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using NLog;
 using BloombergFLP.CollectdWin;

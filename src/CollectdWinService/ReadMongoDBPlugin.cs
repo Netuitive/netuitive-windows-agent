@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Diagnostics;
 using NLog;
 using System.Text.RegularExpressions;
-using System.Threading;
 using BloombergFLP.CollectdWin;
 using MongoDB.Driver;
 using MongoDB.Bson;
