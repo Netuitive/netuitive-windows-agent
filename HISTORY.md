@@ -1,4 +1,8 @@
-﻿## v0.8.2
+## v0.9.0
+- Add system checks plugin
+- Refactor WriteNetuitive plugin to support new collectable types
+
+## v0.8.2
 - Change default config to collect total processor metrics.
 
 ## v0.8.1
