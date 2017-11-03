@@ -140,6 +140,12 @@
                     Vital="yes"
                     KeyPath="no"
                     DiskId="1" />
+              <File Id="ReadSystemChecks.config"
+                    Name="ReadSystemChecks.config"
+                    Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\ReadSystemChecks.config"
+                    Vital="yes"
+                    KeyPath="no"
+                    DiskId="1" />
               <File Id="ReadWindowsPerfCounters.config"
                     Name="ReadWindowsPerfCounters.config"
                     Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\ReadWindowsPerfCounters.config"

@@ -147,6 +147,7 @@
   <ItemGroup>
     <Compile Include="Aggregator.cs" />
     <Compile Include="config\ReadMongoDBPluginConfig.cs" />
+    <Compile Include="config\ReadSystemChecksPluginConfig.cs" />
     <Compile Include="ErrorCodes.cs" />
     <Compile Include="ReadMongoDBPlugin.cs" />
     <Compile Include="WriteAmqpPlugin.cs" />
@@ -191,6 +192,10 @@
   <ItemGroup>
     <None Include="app.config">
       <SubType>Designer</SubType>
+    </None>
+    <None Include="config\ReadSystemChecks.config">
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="config\ReadWindowsEvents.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
