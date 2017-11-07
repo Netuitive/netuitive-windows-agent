@@ -44,7 +44,7 @@ namespace Netuitive.CollectdWin
             _interval = baseConfig.GeneralSettings.Interval;
 
             _sendAgentHeartbeat = config.EnableAgentHeartbeat;
-            _heartbeatInterval = _interval * config.HeartbeatIntervalMultiplier;
+            _heartbeatInterval = _interval * config.HeartbeatTTLMultiplier;
             Logger.Info("Agent heartbeat enabled: {0}, interval: {1}secs", _sendAgentHeartbeat, _heartbeatInterval);
 
             foreach (SystemCheckConfig checkConfig in config.Checks)
