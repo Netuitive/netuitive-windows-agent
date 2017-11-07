@@ -186,6 +186,10 @@ namespace Netuitive.CollectdWin
                     {
                         element.addRelation(new IngestRelation(((RelationValue)value).Fqn));
                     }
+                    else if (value is TagValue)
+                    {
+                        element.addTag(new IngestTag(((TagValue)value).Name, ((TagValue)value).Value));
+                    }
                     return element;
                 })
                 .OrderBy(ingestElement => ingestElement.id).ToList();
@@ -380,6 +384,9 @@ namespace Netuitive.CollectdWin
         [DataMember(Order = 8)]
         public List<IngestRelation> relations = new List<IngestRelation>();
 
+        [DataMember(Order = 9)]
+        public List<IngestTag> tags = new List<IngestTag>();
+
 
         public IngestElement(string id, string name, string type, string location)
         {
@@ -419,6 +426,16 @@ namespace Netuitive.CollectdWin
             this.attributes.Add(attribute);
         }
 
+        public void addTags(List<IngestTag> tags)
+        {
+            this.tags.AddRange(tags);
+        }
+
+        public void addTag(IngestTag tag)
+        {
+            this.tags.Add(tag);
+        }
+
         public void addRelations(List<IngestRelation> relations)
         {
             this.relations.AddRange(relations);
@@ -444,6 +461,7 @@ namespace Netuitive.CollectdWin
             this.addMetrics(that.metrics);
             this.addSamples(that.samples);
             this.addAttributes(that.attributes);
+            this.addTags(that.tags);
             this.addRelations(that.relations);
         }
     }
@@ -496,6 +514,21 @@ namespace Netuitive.CollectdWin
         string value;
 
         public IngestAttribute(string name, string value)
+        {
+            this.name = name;
+            this.value = value;
+        }
+    }
+
+    [DataContract]
+    class IngestTag
+    {
+        [DataMember(Order = 1)]
+        string name;
+        [DataMember(Order = 2)]
+        string value;
+
+        public IngestTag(string name, string value)
         {
             this.name = name;
             this.value = value;
