@@ -1,3 +1,7 @@
+## v0.10.0
+- Add event source field
+- Add basic tag plugin
+
 ## v0.9.0
 - Add system checks plugin
 - Refactor WriteNetuitive plugin to support new collectable types
