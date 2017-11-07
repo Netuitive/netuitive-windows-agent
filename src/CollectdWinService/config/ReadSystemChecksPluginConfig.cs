@@ -26,11 +26,11 @@ namespace BloombergFLP.CollectdWin
             set { base["EnableAgentHeartbeat"] = value; }
         }
 
-        [ConfigurationProperty("HeartbeatIntervalMultiplier", IsRequired = false, DefaultValue = 1)]
-        public int HeartbeatIntervalMultiplier
+        [ConfigurationProperty("HeartbeatTTLMultiplier", IsRequired = false, DefaultValue = 1)]
+        public int HeartbeatTTLMultiplier
         {
-            get { return (int)base["HeartbeatIntervalMultiplier"]; }
-            set { base["HeartbeatIntervalMultiplier"] = value; }
+            get { return (int)base["HeartbeatTTLMultiplier"]; }
+            set { base["HeartbeatTTLMultiplier"] = value; }
         }
     }
 
@@ -72,11 +72,11 @@ namespace BloombergFLP.CollectdWin
             set { base["Alias"] = value; }
         }
 
-        [ConfigurationProperty("IntervalMultiplier", IsRequired = false, DefaultValue = 1)]
+        [ConfigurationProperty("TTLMultiplier", IsRequired = false, DefaultValue = 1)]
         public int IntervalMultiplier
         {
-            get { return (int)base["IntervalMultiplier"]; }
-            set { base["IntervalMultiplier"] = value; }
+            get { return (int)base["TTLMultiplier"]; }
+            set { base["TTLMultiplier"] = value; }
         }
 
         [ConfigurationProperty("UseRegex", IsRequired = false, DefaultValue = false)]
