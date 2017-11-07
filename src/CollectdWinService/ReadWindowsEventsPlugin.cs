@@ -116,16 +116,18 @@ namespace Netuitive.CollectdWin
                         long timestamp = (long)(Util.toEpoch(record.TimeCreated.Value.ToUniversalTime()));
                         long id = (long)record.RecordId;
                         string message = record.FormatDescription();
-                        EventValue newevent = new EventValue(_hostName, timestamp, record.Level.Value, eventQuery.title, message, id);
+                        EventValue newevent = new EventValue(_hostName, timestamp, record.Level.Value, eventQuery.title, message, id, record.ProviderName);
                         collectableValues.Add(newevent);
                         totalEvents++;
                     }
                 }
                 else
                 {
-                    // Too many events - summarise by counting events by application,level and code
+                    // Too many events - summarise by counting events by application, level and code
                     Dictionary<string, int> detailMap = new Dictionary<string, int>();
                     int minLevel = 999; // used to get the most severe event in the period for the summary level
+
+                    string source = null; 
                     filteredRecords.ForEach(delegate(EventRecord record)
                     {
                         string key = string.Format("{0} in {1} ({2})", record.LevelDisplayName, record.ProviderName, record.Id);
@@ -140,6 +142,15 @@ namespace Netuitive.CollectdWin
                         else
                         {
                             detailMap.Add(key, 1);
+                        }
+
+                        if (source == null)
+                        {
+                            source = record.ProviderName;
+                        }
+                        else if (!source.Equals(record.ProviderName))
+                        {
+                            source = "Various";
                         }
                     });
 
@@ -158,7 +169,7 @@ namespace Netuitive.CollectdWin
                         messageLines[ix++] = pair.Value + " x " + pair.Key;
                     }
                     string title = string.Format("{0} ({1} events)", eventQuery.title, filteredRecords.Count);
-                    EventValue newevent = new EventValue(_hostName, collectionTime, minLevel, title, String.Join(", ", messageLines), 0);
+                    EventValue newevent = new EventValue(_hostName, collectionTime, minLevel, title, String.Join(", ", messageLines), 0, source); 
                     collectableValues.Add(newevent);
                     totalEvents += filteredRecords.Count;
                 }
