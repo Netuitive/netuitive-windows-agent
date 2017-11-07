@@ -107,6 +107,31 @@ namespace BloombergFLP.CollectdWin
 
     }
 
+    internal class TagValue : IngestValue
+    {
+        public string Name { get; set; }
+        public string Value { get; set; }
+        private const string JSON_FORMAT = @"{{""name"":""{0}"", ""value"":""{1}""}}";
+
+        public TagValue(string hostname, string name, string value)
+        {
+            Name = name;
+            Value = value;
+            HostName = hostname;
+
+            PluginName = "WindowsTags";
+            PluginInstanceName = "";
+            TypeName = "";
+            TypeInstanceName = "";
+        }
+
+        public override string getJSON()
+        {
+            return string.Format(JSON_FORMAT, Name, Value);
+        }
+
+    }
+
     internal class RelationValue : IngestValue
     {
         public string Fqn { get; set; }
