@@ -148,9 +148,11 @@
     <Compile Include="Aggregator.cs" />
     <Compile Include="config\ReadMongoDBPluginConfig.cs" />
     <Compile Include="config\ReadSystemChecksPluginConfig.cs" />
+    <Compile Include="config\ReadWindowsTagsPluginConfig.cs" />
     <Compile Include="ErrorCodes.cs" />
     <Compile Include="ReadMongoDBPlugin.cs" />
     <Compile Include="ReadSystemChecksPlugin.cs" />
+    <Compile Include="ReadWindowsTags.cs" />
     <Compile Include="WriteAmqpPlugin.cs" />
     <Compile Include="CollectableValue.cs" />
     <Compile Include="config\WriteAmqpPluginConfig.cs" />
@@ -196,6 +198,9 @@
     </None>
     <None Include="config\ReadSystemChecks.config">
       <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="config\ReadWindowsTags.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="config\ReadWindowsEvents.config">

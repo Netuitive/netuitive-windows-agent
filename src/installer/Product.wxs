@@ -146,6 +146,12 @@
                     Vital="yes"
                     KeyPath="no"
                     DiskId="1" />
+              <File Id="ReadWindowsTags.config"
+                    Name="ReadWindowsTags.config"
+                    Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\ReadWindowsTags.config"
+                    Vital="yes"
+                    KeyPath="no"
+                    DiskId="1" />
               <File Id="ReadWindowsPerfCounters.config"
                     Name="ReadWindowsPerfCounters.config"
                     Source="..\CollectdWinService\bin\$(var.Platform)\$(var.Configuration)\config\ReadWindowsPerfCounters.config"
