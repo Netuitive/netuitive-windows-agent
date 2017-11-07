@@ -69,6 +69,13 @@ namespace Netuitive.CollectdWin
         {
             var collectedValueList = new List<CollectableValue>();
 
+
+            foreach (Tag tag in _tags)
+            {
+                TagValue tagValue = new TagValue(_hostName, tag.name, tag.value);
+                collectedValueList.Add(tagValue);
+            }
+
             return collectedValueList;
         }
     }
