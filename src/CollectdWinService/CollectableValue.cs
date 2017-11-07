@@ -138,9 +138,10 @@ namespace BloombergFLP.CollectdWin
         public string Level { get; set; }
         public string Title { get; set; }
         public long Timestamp { get; set; }
+        public string Source { get; set; }
         private const string JSON_FORMAT = @"{{""level"": ""{0}"", ""source"":""{1}"", ""title"":""{2}"", ""message"":""{3}"", ""timestamp"": {4} }}";
 
-        public EventValue(string hostname, long timestamp, int nLevel, string title, string message, long id)
+        public EventValue(string hostname, long timestamp, int nLevel, string title, string message, long id, string source)
         {
             Level = EventValue.levelToString(nLevel);
             Timestamp = timestamp;
@@ -148,6 +149,7 @@ namespace BloombergFLP.CollectdWin
             Message = message;
             HostName = hostname;
             Id = id;
+            Source = source;
         }
 
         public static string levelToString(int level)
@@ -185,7 +187,7 @@ namespace BloombergFLP.CollectdWin
 
         public override string getJSON()
         {
-            return string.Format(JSON_FORMAT, Level, HostName, Title, Message, Timestamp*1000);
+            return string.Format(JSON_FORMAT, Level, Source, Title, Message, Timestamp*1000);
         }
 
     }

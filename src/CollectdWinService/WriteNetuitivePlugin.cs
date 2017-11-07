@@ -283,7 +283,7 @@ namespace Netuitive.CollectdWin
                             break;
                     }
 
-                    IngestEvent ie = new IngestEvent("INFO", "", title, value.Timestamp * 1000);
+                    IngestEvent ie = new IngestEvent("INFO", value.Source, title, value.Timestamp * 1000);
 
                     IngestEventData data = new IngestEventData(value.HostName, level, message);
                     ie.setData(data);
