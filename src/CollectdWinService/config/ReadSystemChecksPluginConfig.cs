@@ -26,7 +26,7 @@ namespace BloombergFLP.CollectdWin
             set { base["EnableAgentHeartbeat"] = value; }
         }
 
-        [ConfigurationProperty("HeartbeatTTLMultiplier", IsRequired = false, DefaultValue = 1)]
+        [ConfigurationProperty("HeartbeatTTLMultiplier", IsRequired = false, DefaultValue = 2)]
         public int HeartbeatTTLMultiplier
         {
             get { return (int)base["HeartbeatTTLMultiplier"]; }
