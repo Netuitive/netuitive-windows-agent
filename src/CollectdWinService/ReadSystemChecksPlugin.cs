@@ -44,7 +44,7 @@ namespace Netuitive.CollectdWin
             _interval = baseConfig.GeneralSettings.Interval;
 
             _sendAgentHeartbeat = config.EnableAgentHeartbeat;
-            _heartbeatInterval = _interval * config.HeartbeatTTLMultiplier;
+            _heartbeatInterval = (int)Math.Ceiling(_interval * Math.Max(1.0,config.HeartbeatTTLMultiplier));
             Logger.Info("Agent heartbeat enabled: {0}, interval: {1}secs", _sendAgentHeartbeat, _heartbeatInterval);
 
             foreach (SystemCheckConfig checkConfig in config.Checks)
@@ -55,7 +55,7 @@ namespace Netuitive.CollectdWin
                     Name = checkConfig.UseRegex ? checkConfig.Name : "^" + checkConfig.Name + "$",
                     Alias = String.IsNullOrWhiteSpace(checkConfig.Alias) ? checkConfig.Name : checkConfig.Alias,
                     Type = checkConfig.Type,
-                    Interval = checkConfig.IntervalMultiplier * _interval
+                    Interval = (int)Math.Ceiling(Math.Max(1.0,checkConfig.IntervalMultiplier * _interval))
                 };
                 _checks.Add(check);
                 Logger.Info("Added check for {0} '{1}' as '{2}' with interval {3} secs", check.Type, check.Name, check.Alias, check.Interval);
