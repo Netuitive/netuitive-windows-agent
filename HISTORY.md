@@ -1,3 +1,6 @@
+## v0.10.1
+- Allow decimal check TTL multipliers. Show TTL multipliers in config with documentation 
+
 ## v0.10.0
 - Add event source field
 - Add basic tag plugin
