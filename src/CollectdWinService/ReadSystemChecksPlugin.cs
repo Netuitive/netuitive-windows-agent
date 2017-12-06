@@ -83,6 +83,8 @@ namespace Netuitive.CollectdWin
 
             List<ServiceCheckConfig> serviceChecks = _checks.OfType<ServiceCheckConfig>().ToList();
 
+            if (serviceChecks.Count > 0)
+            {
             ServiceController[] serviceList = ServiceController.GetServices();
 
                 foreach (SystemCheckConfig checkConfig in serviceChecks)
@@ -109,6 +111,7 @@ namespace Netuitive.CollectdWin
                     Logger.Warn("No services matching '{0}' were found. Check not created.", checkConfig.Name);
                 }
             }
+            }
             return checkList;
         }
 
@@ -119,6 +122,8 @@ namespace Netuitive.CollectdWin
 
             List<ProcessCheckConfig> processChecks = _checks.OfType<ProcessCheckConfig>().ToList();
 
+            if (processChecks.Count > 0)
+            {
             Process[] processList = Process.GetProcesses();
 
                 foreach (SystemCheckConfig checkConfig in processChecks)
@@ -143,7 +148,7 @@ namespace Netuitive.CollectdWin
                 }
                 
             }
-
+            }
             return checkList;
         }
 
