@@ -10,25 +10,18 @@ using System.Linq;
 
 namespace Netuitive.CollectdWin
 {
-    internal struct CheckConfig
-    {
-        public string Name;
-        public string Alias;
-        public int Interval;
-        public CheckType Type;
-    }
 
     internal class ReadSystemChecksPlugin : ICollectdReadPlugin
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        private readonly IList<CheckConfig> _checks;
+        private IList<SystemCheckConfig> _checks;
         private string _hostName;
         private int _interval;
         private bool _sendAgentHeartbeat;
         private int _heartbeatInterval;
         public ReadSystemChecksPlugin()
         {
-            _checks = new List<CheckConfig>();
+            _checks = new List<SystemCheckConfig>();
         }
 
         public void Configure()
@@ -47,18 +40,11 @@ namespace Netuitive.CollectdWin
             _heartbeatInterval = (int)Math.Ceiling(_interval * Math.Max(1.0,config.HeartbeatTTLMultiplier));
             Logger.Info("Agent heartbeat enabled: {0}, interval: {1}secs", _sendAgentHeartbeat, _heartbeatInterval);
 
-            foreach (SystemCheckConfig checkConfig in config.Checks)
-            {
-                CheckConfig check = new CheckConfig
-                {
 
-                    Name = checkConfig.UseRegex ? checkConfig.Name : "^" + checkConfig.Name + "$",
-                    Alias = String.IsNullOrWhiteSpace(checkConfig.Alias) ? checkConfig.Name : checkConfig.Alias,
-                    Type = checkConfig.Type,
-                    Interval = (int)Math.Ceiling(Math.Max(1.0,checkConfig.IntervalMultiplier * _interval))
-                };
+            foreach (SystemCheckConfig check in config.Checks)
+            {
                 _checks.Add(check);
-                Logger.Info("Added check for {0} '{1}' as '{2}' with interval {3} secs", check.Type, check.Name, check.Alias, check.Interval);
+                Logger.Info("Added {0} '{1}' as '{2}' with interval {3} secs", check.GetType().Name , check.Name, check.Alias, check.GetTTL(_interval));
             }
 
             _hostName = Util.GetHostName();
@@ -94,8 +80,12 @@ namespace Netuitive.CollectdWin
         private List<CollectableValue> CheckServices()
         {
             List<CollectableValue> checkList = new List<CollectableValue>();
+
+            List<ServiceCheckConfig> serviceChecks = _checks.OfType<ServiceCheckConfig>().ToList();
+
             ServiceController[] serviceList = ServiceController.GetServices();
-            foreach (CheckConfig checkConfig in _checks.Where(o => o.Type == CheckType.Service).ToList())
+
+                foreach (SystemCheckConfig checkConfig in serviceChecks)
             {
                 Regex regex = new Regex(checkConfig.Name, RegexOptions.None);
 
@@ -106,6 +96,7 @@ namespace Netuitive.CollectdWin
                     {
                         Logger.Debug("Creating check for service: {0}", checkConfig.Name);
                         checkList.Add(createCheck(checkConfig.Alias, checkConfig.Interval)); 
+                            checkList.Add(createCheck(checkConfig.Alias, checkConfig.GetTTL(_interval)));
                     }
                     else
                     {
@@ -125,9 +116,12 @@ namespace Netuitive.CollectdWin
         {
             List<CollectableValue> checkList = new List<CollectableValue>();
             
+
+            List<ProcessCheckConfig> processChecks = _checks.OfType<ProcessCheckConfig>().ToList();
+
             Process[] processList = Process.GetProcesses();
 
-            foreach (CheckConfig checkConfig in _checks.Where(o => o.Type == CheckType.Process).ToList())
+                foreach (SystemCheckConfig checkConfig in processChecks)
             {
                 Regex regex = new Regex(checkConfig.Name, RegexOptions.None);
 
@@ -140,6 +134,7 @@ namespace Netuitive.CollectdWin
                 {
                     Logger.Debug("Creating check for process: {0}", checkConfig.Name);
                     checkList.Add(createCheck(checkConfig.Alias, checkConfig.Interval));
+                        checkList.Add(createCheck(checkConfig.Alias, checkConfig.GetTTL(_interval)));
                 }
 
                 if (matches.Count == 0)
