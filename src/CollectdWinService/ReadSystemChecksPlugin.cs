@@ -7,28 +7,22 @@ using System.Text.RegularExpressions;
 using BloombergFLP.CollectdWin;
 using System.ServiceProcess;
 using System.Linq;
+using System.Net.NetworkInformation;
 
 namespace Netuitive.CollectdWin
 {
-    internal struct CheckConfig
-    {
-        public string Name;
-        public string Alias;
-        public int Interval;
-        public CheckType Type;
-    }
 
     internal class ReadSystemChecksPlugin : ICollectdReadPlugin
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        private readonly IList<CheckConfig> _checks;
+        private IList<SystemCheckConfig> _checks;
         private string _hostName;
         private int _interval;
         private bool _sendAgentHeartbeat;
         private int _heartbeatInterval;
         public ReadSystemChecksPlugin()
         {
-            _checks = new List<CheckConfig>();
+            _checks = new List<SystemCheckConfig>();
         }
 
         public void Configure()
@@ -47,18 +41,11 @@ namespace Netuitive.CollectdWin
             _heartbeatInterval = (int)Math.Ceiling(_interval * Math.Max(1.0,config.HeartbeatTTLMultiplier));
             Logger.Info("Agent heartbeat enabled: {0}, interval: {1}secs", _sendAgentHeartbeat, _heartbeatInterval);
 
-            foreach (SystemCheckConfig checkConfig in config.Checks)
-            {
-                CheckConfig check = new CheckConfig
-                {
 
-                    Name = checkConfig.UseRegex ? checkConfig.Name : "^" + checkConfig.Name + "$",
-                    Alias = String.IsNullOrWhiteSpace(checkConfig.Alias) ? checkConfig.Name : checkConfig.Alias,
-                    Type = checkConfig.Type,
-                    Interval = (int)Math.Ceiling(Math.Max(1.0,checkConfig.IntervalMultiplier * _interval))
-                };
+            foreach (SystemCheckConfig check in config.Checks)
+            {
                 _checks.Add(check);
-                Logger.Info("Added check for {0} '{1}' as '{2}' with interval {3} secs", check.Type, check.Name, check.Alias, check.Interval);
+                Logger.Info("Added {0} '{1}' as '{2}' with interval {3} secs", check.GetType().Name , check.Name, check.Alias, check.GetTTL(_interval));
             }
 
             _hostName = Util.GetHostName();
@@ -87,6 +74,7 @@ namespace Netuitive.CollectdWin
 
             checkList.AddRange(CheckServices());
             checkList.AddRange(CheckProcesses());
+            checkList.AddRange(CheckPorts());
 
             return checkList;
         }
@@ -94,28 +82,36 @@ namespace Netuitive.CollectdWin
         private List<CollectableValue> CheckServices()
         {
             List<CollectableValue> checkList = new List<CollectableValue>();
-            ServiceController[] serviceList = ServiceController.GetServices();
-            foreach (CheckConfig checkConfig in _checks.Where(o => o.Type == CheckType.Service).ToList())
+
+            List<ServiceCheckConfig> serviceChecks = _checks.OfType<ServiceCheckConfig>().ToList();
+
+            if (serviceChecks.Count > 0)
             {
-                Regex regex = new Regex(checkConfig.Name, RegexOptions.None);
+                ServiceController[] serviceList = ServiceController.GetServices();
 
-                List<ServiceController> matches = serviceList.Where(service => regex.IsMatch(service.ServiceName)).ToList();
-                foreach(ServiceController foundService in matches)
+                foreach (SystemCheckConfig checkConfig in serviceChecks)
                 {
-                    if (foundService.Status == ServiceControllerStatus.Running)
-                    {
-                        Logger.Debug("Creating check for service: {0}", checkConfig.Name);
-                        checkList.Add(createCheck(checkConfig.Alias, checkConfig.Interval)); 
-                    }
-                    else
-                    {
-                        Logger.Warn("Service '{0}' not running. Check not created.", checkConfig.Name);
-                    }
-                }
+                    Regex regex = new Regex(checkConfig.Name, RegexOptions.None);
 
-                if (matches.Count == 0)
-                {
-                    Logger.Warn("No services matching '{0}' were found. Check not created.", checkConfig.Name);
+                    List<ServiceController> matches = serviceList.Where(service => regex.IsMatch(service.ServiceName)).ToList();
+                    foreach (ServiceController foundService in matches)
+                    {
+                        if (foundService.Status == ServiceControllerStatus.Running)
+                        {
+                            string checkName = String.IsNullOrWhiteSpace(checkConfig.Alias) ? foundService.ServiceName : checkConfig.Alias;
+                            Logger.Debug("Creating check for service: {0}", checkName);
+                            checkList.Add(createCheck(checkName, checkConfig.GetTTL(_interval)));
+                        }
+                        else
+                        {
+                            Logger.Warn("Service '{0}' not running. Check not created.", checkConfig.Name);
+                        }
+                    }
+
+                    if (matches.Count == 0)
+                    {
+                        Logger.Warn("No services matching '{0}' were found. Check not created.", checkConfig.Name);
+                    }
                 }
             }
             return checkList;
@@ -125,33 +121,60 @@ namespace Netuitive.CollectdWin
         {
             List<CollectableValue> checkList = new List<CollectableValue>();
             
-            Process[] processList = Process.GetProcesses();
 
-            foreach (CheckConfig checkConfig in _checks.Where(o => o.Type == CheckType.Process).ToList())
+            List<ProcessCheckConfig> processChecks = _checks.OfType<ProcessCheckConfig>().ToList();
+
+            if (processChecks.Count > 0)
             {
-                Regex regex = new Regex(checkConfig.Name, RegexOptions.None);
+                Process[] processList = Process.GetProcesses();
 
-                List<Process> matches = processList.Where(process =>
+                foreach (SystemCheckConfig checkConfig in processChecks)
                 {
-                    return regex.IsMatch(process.ProcessName);
-                }).ToList();
+                    Regex regex = new Regex(checkConfig.Name, RegexOptions.None);
 
-                foreach (Process foundProcess in matches)
-                {
-                    Logger.Debug("Creating check for process: {0}", checkConfig.Name);
-                    checkList.Add(createCheck(checkConfig.Alias, checkConfig.Interval));
+                    List<Process> matches = processList.Where(process =>
+                    {
+                        return regex.IsMatch(process.ProcessName);
+                    }).ToList();
+
+                    foreach (Process foundProcess in matches)
+                    {
+                        string checkName = String.IsNullOrWhiteSpace(checkConfig.Alias) ? foundProcess.ProcessName : checkConfig.Alias;
+                        Logger.Debug("Creating check for process: {0}", checkName);
+                        checkList.Add(createCheck(checkName, checkConfig.GetTTL(_interval)));
+                    }
+
+                    if (matches.Count == 0)
+                    {
+                        Logger.Warn("No processes matching '{0}' were found. Check not created.", checkConfig.Name);
+                    }
+
                 }
+            }
+            return checkList;
+        }
 
-                if (matches.Count == 0)
+        private List<CollectableValue> CheckPorts()
+        {
+            List<CollectableValue> checkList = new List<CollectableValue>();
+
+            IList<PortCheckConfig> serviceChecks = _checks.OfType<PortCheckConfig>().ToList();
+            if (serviceChecks.Count > 0) {
+                IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+                List<int> activePorts = ipGlobalProperties.GetActiveTcpListeners().Select(endpoint => endpoint.Port).ToList();
+
+                foreach (PortCheckConfig checkConfig in serviceChecks)
                 {
-                    Logger.Warn("No processes matching '{0}' were found. Check not created.", checkConfig.Name);
+                    if (activePorts.Exists(port => port == checkConfig.Port)) {
+                        string checkName = String.IsNullOrWhiteSpace(checkConfig.Alias) ? checkConfig.Name + "." + checkConfig.Port : checkConfig.Alias;
+                        Logger.Debug("Creating check for port: {0}", checkName);
+                        checkList.Add(createCheck(checkName, checkConfig.GetTTL(_interval)));
+                    }
                 }
-                
             }
 
             return checkList;
         }
-
         private CheckValue createCheck(string name, int interval)
         {
             string cleanName = name.Replace(",", "_");

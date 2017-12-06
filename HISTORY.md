@@ -1,3 +1,6 @@
+## v0.10.2
+- Add support for TCP port checks
+
 ## v0.10.1
 - Allow decimal check TTL multipliers. Show TTL multipliers in config with documentation 
 
