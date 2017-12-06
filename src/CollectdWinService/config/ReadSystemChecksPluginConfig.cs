@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Configuration;
+using System.Xml;
 
 namespace BloombergFLP.CollectdWin
 {
     public enum CheckType
     {
         Service,
-        Process
+        Process,
+        Port
     };
 
     public sealed class ReadSystemChecksPluginConfig : CollectdPluginConfig
@@ -121,11 +123,25 @@ namespace BloombergFLP.CollectdWin
         }
     }
 
-    }
-
+    public class PortCheckConfig : SystemCheckConfig
     {
+        [ConfigurationProperty("Host", IsRequired = false, DefaultValue="localhost")]
+        public String Host
         {
-            get { return (string)base["Name"]; }
+            get { return (string)base["Host"]; }
+            set { base["Host"] = value; }
+        }
+
+        [ConfigurationProperty("Port", IsRequired = true)]
+        public int Port
+        {
+            get { return (int)base["Port"]; }
+            set { base["Port"] = value; }
+        }
+
+        public override String Name
+        {
+            get {return (string)base["Name"];}
             set { base["Name"] = value; }
         }
 
