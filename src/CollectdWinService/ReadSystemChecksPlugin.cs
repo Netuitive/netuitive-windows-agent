@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using BloombergFLP.CollectdWin;
 using System.ServiceProcess;
 using System.Linq;
+using System.Net.NetworkInformation;
 
 namespace Netuitive.CollectdWin
 {
@@ -73,6 +74,7 @@ namespace Netuitive.CollectdWin
 
             checkList.AddRange(CheckServices());
             checkList.AddRange(CheckProcesses());
+            checkList.AddRange(CheckPorts());
 
             return checkList;
         }
@@ -152,7 +154,22 @@ namespace Netuitive.CollectdWin
             return checkList;
         }
 
+        private List<CollectableValue> CheckPorts()
+        {
+            List<CollectableValue> checkList = new List<CollectableValue>();
+
+            IList<PortCheckConfig> serviceChecks = _checks.OfType<PortCheckConfig>().ToList();
+            if (serviceChecks.Count > 0) {
+                IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+                List<int> activePorts = ipGlobalProperties.GetActiveTcpListeners().Select(endpoint => endpoint.Port).ToList();
+
+                foreach (PortCheckConfig checkConfig in serviceChecks)
                 {
+                    if (activePorts.Exists(port => port == checkConfig.Port)) {
+                        string checkName = String.IsNullOrWhiteSpace(checkConfig.Alias) ? checkConfig.Name + "." + checkConfig.Port : checkConfig.Alias;
+                        Logger.Debug("Creating check for port: {0}", checkName);
+                        checkList.Add(createCheck(checkName, checkConfig.GetTTL(_interval)));
+                    }
                 }
             }
 
