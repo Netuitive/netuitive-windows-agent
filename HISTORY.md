@@ -1,4 +1,4 @@
-## v.next
+## v0.10.3
 - Adjust checks multiplier to 2.5 for additional network latency leeway.
 - Collect AWS metadata every cycle
 
