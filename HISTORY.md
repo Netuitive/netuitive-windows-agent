@@ -1,8 +1,12 @@
+## v0.10.3
+- Adjust checks multiplier to 2.5 for additional network latency leeway.
+- Collect AWS metadata every cycle
+
 ## v0.10.2
 - Add support for TCP port checks
 
 ## v0.10.1
-- Allow decimal check TTL multipliers. Show TTL multipliers in config with documentation 
+- Allow decimal check TTL multipliers. Show TTL multipliers in config with documentation
 
 ## v0.10.0
 - Add event source field
@@ -17,7 +21,7 @@
 
 ## v0.8.1
 - Added MongoDB plugin (requires .NET CLR 4.0)
-- Agent now requires .NET CLR 4.0 (see https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/versions-and-dependencies) 
+- Agent now requires .NET CLR 4.0 (see https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/versions-and-dependencies)
 
 ## v0.7.4
 - Fixed FQN in EC2 relationship (latest version to support .NET CLR 2.0)
@@ -67,5 +71,6 @@
 
 ## v0.6.5786
 - Various bug fixes.
+
 ## v0.6.5745
 - Initial release

@@ -74,12 +74,10 @@ namespace Netuitive.CollectdWin
             var collectedValueList = new List<CollectableValue>();
 
             collectedValueList.AddRange(GetCommonAttributes());
-
+            
             if (_readEC2InstanceMetadata)
             {
-                // This is only done once on the assumption that the EC2 would have to reboot for these values to change
                 collectedValueList.AddRange(GetEC2Metadata());
-                _readEC2InstanceMetadata = false;
             }
             foreach (Attribute attribute in _attributes)
             {
