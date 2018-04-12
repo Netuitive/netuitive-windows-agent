@@ -1,5 +1,6 @@
-##v.next
+## v.next
 - Adjust checks multiplier to 2.5 for additional network latency leeway.
+- Collect AWS metadata every cycle
 
 ## v0.10.2
 - Add support for TCP port checks
@@ -70,5 +71,6 @@
 
 ## v0.6.5786
 - Various bug fixes.
+
 ## v0.6.5745
 - Initial release
