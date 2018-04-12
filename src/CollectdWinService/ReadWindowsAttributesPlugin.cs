@@ -74,8 +74,11 @@ namespace Netuitive.CollectdWin
             var collectedValueList = new List<CollectableValue>();
 
             collectedValueList.AddRange(GetCommonAttributes());
-            collectedValueList.AddRange(GetEC2Metadata());
-
+            
+            if (_readEC2InstanceMetadata)
+            {
+                collectedValueList.AddRange(GetEC2Metadata());
+            }
             foreach (Attribute attribute in _attributes)
             {
                 try
