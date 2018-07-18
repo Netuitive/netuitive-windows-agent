@@ -160,12 +160,12 @@ namespace Netuitive.CollectdWin
         {
             List<CollectableValue> checkList = new List<CollectableValue>();
 
-            IList<PortCheckConfig> serviceChecks = _checks.OfType<PortCheckConfig>().ToList();
-            if (serviceChecks.Count > 0) {
+            IList<PortCheckConfig> portChecks = _checks.OfType<PortCheckConfig>().ToList();
+            if (portChecks.Count > 0) {
                 IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
                 List<int> activePorts = ipGlobalProperties.GetActiveTcpListeners().Select(endpoint => endpoint.Port).ToList();
 
-                foreach (PortCheckConfig checkConfig in serviceChecks)
+                foreach (PortCheckConfig checkConfig in portChecks)
                 {
                     if (activePorts.Exists(port => port == checkConfig.Port)) {
                         string checkName = String.IsNullOrWhiteSpace(checkConfig.Alias) ? checkConfig.Name + "." + checkConfig.Port : checkConfig.Alias;
