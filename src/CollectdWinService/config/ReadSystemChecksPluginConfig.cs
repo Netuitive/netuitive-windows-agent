@@ -4,13 +4,6 @@ using System.Xml;
 
 namespace BloombergFLP.CollectdWin
 {
-    public enum CheckType
-    {
-        Service,
-        Process,
-        Port
-    };
-
     public sealed class ReadSystemChecksPluginConfig : CollectdPluginConfig
     {
         [ConfigurationProperty("Checks", IsRequired = false)]
@@ -64,7 +57,7 @@ namespace BloombergFLP.CollectdWin
                     return new HttpCheckConfig();
             }
 
-            throw new ConfigurationErrorsException("Unregognised check type: " + elementName);
+            throw new ConfigurationErrorsException("Unrecognised check type: " + elementName);
         }
 
         protected override bool OnDeserializeUnrecognizedElement(string elementName, XmlReader reader)
@@ -127,13 +120,6 @@ namespace BloombergFLP.CollectdWin
 
     public class PortCheckConfig : SystemCheckConfig
     {
-        [ConfigurationProperty("Host", IsRequired = false, DefaultValue="localhost")]
-        public String Host
-        {
-            get { return (string)base["Host"]; }
-            set { base["Host"] = value; }
-        }
-
         [ConfigurationProperty("Port", IsRequired = true)]
         public int Port
         {
