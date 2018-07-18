@@ -181,7 +181,7 @@ namespace BloombergFLP.CollectdWin
             set { base["Alias"] = value; }
         }
 
-        [ConfigurationProperty("TTLMultiplier", IsRequired = false, DefaultValue = 1.2)]
+        [ConfigurationProperty("TTLMultiplier", IsRequired = false, DefaultValue = 2.5)]
         public double IntervalMultiplier
         {
             get { return (double)base["TTLMultiplier"]; }
