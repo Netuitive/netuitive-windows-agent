@@ -60,6 +60,8 @@ namespace BloombergFLP.CollectdWin
                     return new ServiceCheckConfig();
                 case "ProcessCheck":
                     return new ProcessCheckConfig();
+                case "HttpCheck":
+                    return new HttpCheckConfig();
             }
 
             throw new ConfigurationErrorsException("Unregognised check type: " + elementName);
@@ -67,7 +69,7 @@ namespace BloombergFLP.CollectdWin
 
         protected override bool OnDeserializeUnrecognizedElement(string elementName, XmlReader reader)
         {
-            if (elementName.Equals("PortCheck") || elementName.Equals("ServiceCheck") || elementName.Equals("ProcessCheck"))
+            if (elementName.Equals("PortCheck") || elementName.Equals("ServiceCheck") || elementName.Equals("ProcessCheck") || elementName.Equals("HttpCheck"))
             {
                 var element = (SystemCheckConfig)CreateNewElement(elementName);
                 element.Deserialize(reader);
@@ -145,6 +147,36 @@ namespace BloombergFLP.CollectdWin
             set { base["Name"] = value; }
         }
 
+    }
+
+    public class HttpCheckConfig : SystemCheckConfig
+    {
+        [ConfigurationProperty("Url", IsRequired = true)]
+        public String Url
+        {
+            get { return (string)base["Url"]; }
+            set { base["Url"] = value; }
+        }
+
+        public override String Name
+        {
+            get { return (string)base["Name"]; }
+            set { base["Name"] = value; }
+        }
+
+        [ConfigurationProperty("AuthHeader", IsRequired = false, DefaultValue = "")]
+        public String AuthHeader
+        {
+            get { return (string)base["AuthHeader"]; }
+            set { base["AuthHeader"] = value; }
+        }
+
+        [ConfigurationProperty("StatusMatches", IsRequired = false, DefaultValue = "2..")]
+        public String StatusMatches
+        {
+            get { return (string)base["StatusMatches"]; }
+            set { base["StatusMatches"] = value; }
+        }
     }
 
     public abstract class SystemCheckConfig : ConfigurationElement
