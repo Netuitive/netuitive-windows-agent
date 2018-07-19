@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using NLog;
+using System.Net;
 using System.Text.RegularExpressions;
 using BloombergFLP.CollectdWin;
 using System.ServiceProcess;
@@ -75,6 +76,7 @@ namespace Netuitive.CollectdWin
             checkList.AddRange(CheckServices());
             checkList.AddRange(CheckProcesses());
             checkList.AddRange(CheckPorts());
+            checkList.AddRange(CheckHttp());
 
             return checkList;
         }
@@ -158,12 +160,12 @@ namespace Netuitive.CollectdWin
         {
             List<CollectableValue> checkList = new List<CollectableValue>();
 
-            IList<PortCheckConfig> serviceChecks = _checks.OfType<PortCheckConfig>().ToList();
-            if (serviceChecks.Count > 0) {
+            IList<PortCheckConfig> portChecks = _checks.OfType<PortCheckConfig>().ToList();
+            if (portChecks.Count > 0) {
                 IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
                 List<int> activePorts = ipGlobalProperties.GetActiveTcpListeners().Select(endpoint => endpoint.Port).ToList();
 
-                foreach (PortCheckConfig checkConfig in serviceChecks)
+                foreach (PortCheckConfig checkConfig in portChecks)
                 {
                     if (activePorts.Exists(port => port == checkConfig.Port)) {
                         string checkName = String.IsNullOrWhiteSpace(checkConfig.Alias) ? checkConfig.Name + "." + checkConfig.Port : checkConfig.Alias;
@@ -175,6 +177,54 @@ namespace Netuitive.CollectdWin
 
             return checkList;
         }
+
+        private List<CollectableValue> CheckHttp()
+        {
+            List<CollectableValue> checkList = new List<CollectableValue>();
+
+            IList<HttpCheckConfig> httpChecks = _checks.OfType<HttpCheckConfig>().ToList();
+            foreach (HttpCheckConfig checkConfig in httpChecks)
+            {
+                HttpWebResponse response = null;
+                try
+                {
+                    HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(checkConfig.Url);
+                    webRequest.AllowAutoRedirect = true;
+                    if (!String.IsNullOrWhiteSpace(checkConfig.AuthHeader))
+                    {
+                        webRequest.Headers[HttpRequestHeader.Authorization] = checkConfig.AuthHeader;
+                        webRequest.PreAuthenticate = true;
+                    }
+                    response = (HttpWebResponse)webRequest.GetResponse();
+                }
+                catch (System.Net.WebException ex)
+                {
+                    response = (HttpWebResponse)ex.Response;
+                }
+                finally {
+                    if (response != null) {
+                        response.Close();
+                    }
+                }
+
+                Regex regex = new Regex(checkConfig.StatusMatches, RegexOptions.None);
+
+                string status = ((int)response.StatusCode).ToString();
+
+                if (regex.IsMatch(status)) { 
+                    string checkName = String.IsNullOrWhiteSpace(checkConfig.Alias) ? checkConfig.Name : checkConfig.Alias;
+                    Logger.Debug("Creating HTTP check: {0}", checkName);
+                    checkList.Add(createCheck(checkName, checkConfig.GetTTL(_interval)));
+                }
+                else
+                {
+                     Logger.Warn("Http check for {0} returned {1}. Not sending check.", checkConfig.Url, status);
+                }
+            }
+
+            return checkList;
+        }
+
         private CheckValue createCheck(string name, int interval)
         {
             string cleanName = name.Replace(",", "_");
