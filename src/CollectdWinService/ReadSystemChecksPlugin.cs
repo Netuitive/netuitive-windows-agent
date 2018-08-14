@@ -186,6 +186,7 @@ namespace Netuitive.CollectdWin
             foreach (HttpCheckConfig checkConfig in httpChecks)
             {
                 HttpWebResponse response = null;
+                String lastError = "";
                 try
                 {
                     HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(checkConfig.Url);
@@ -200,6 +201,7 @@ namespace Netuitive.CollectdWin
                 catch (System.Net.WebException ex)
                 {
                     response = (HttpWebResponse)ex.Response;
+                    lastError = ex.Message;
                 }
                 finally {
                     if (response != null) {
@@ -207,18 +209,26 @@ namespace Netuitive.CollectdWin
                     }
                 }
 
-                Regex regex = new Regex(checkConfig.StatusMatches, RegexOptions.None);
+                if (response != null)
+                {
+                    Regex regex = new Regex(checkConfig.StatusMatches, RegexOptions.None);
 
-                string status = ((int)response.StatusCode).ToString();
+                    string status = ((int)response.StatusCode).ToString();
 
-                if (regex.IsMatch(status)) { 
-                    string checkName = String.IsNullOrWhiteSpace(checkConfig.Alias) ? checkConfig.Name : checkConfig.Alias;
-                    Logger.Debug("Creating HTTP check: {0}", checkName);
-                    checkList.Add(createCheck(checkName, checkConfig.GetTTL(_interval)));
+                    if (regex.IsMatch(status))
+                    {
+                        string checkName = String.IsNullOrWhiteSpace(checkConfig.Alias) ? checkConfig.Name : checkConfig.Alias;
+                        Logger.Debug("Creating HTTP check: {0}", checkName);
+                        checkList.Add(createCheck(checkName, checkConfig.GetTTL(_interval)));
+                    }
+                    else
+                    {
+                        Logger.Warn("Http check for {0} returned: {1}. Not sending check.", checkConfig.Url, status);
+                    }
                 }
                 else
                 {
-                     Logger.Warn("Http check for {0} returned {1}. Not sending check.", checkConfig.Url, status);
+                    Logger.Warn("Http check for {0} returned: {1}. Not sending check.", checkConfig.Url, lastError);
                 }
             }
 
