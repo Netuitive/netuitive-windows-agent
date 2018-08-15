@@ -1,3 +1,8 @@
+## vNext
+
+## v0.10.5
+- Handle null response in HTTP checks
+
 ## v0.10.4
 - Add support for HTTP checks
 
