@@ -198,6 +198,19 @@ namespace Netuitive.CollectdWin
                 {                    
                     totalRAM += Convert.ToInt64(queryObj["Capacity"]);
                 }
+		if (totalRAM <= 0)
+		{
+			ConnectionOptions altconnection = new ConnectionOptions();
+			altconnection.Impersonation = ImpersonationLevel.Impersonate;
+			ManagementScope altscope = new ManagementScope("\\\\.\\root\\CIMV2", altconnection);
+			scope.Connect();
+			ObjectQuery altquery = new ObjectQuery("SELECT * FROM Win32_ComputerSystem");
+			ManagementObjectSearcher altsearcher = new ManagementObjectSearcher(altscope, altquery);
+			foreach (ManagementObject altqueryObj in altsearcher.Get())
+			{
+				    totalRAM += Convert.ToInt64(altqueryObj["TotalPhysicalMemory"]);
+			}
+		}
             }
             catch (Exception ex)
             {

@@ -1,5 +1,6 @@
 ## vNext
 - Improved ReadSystemChecks config to make it more clear where check entries should be placed.
+- Fixed Total Physical Memory detection for certain EC2 types
 
 ## v0.10.5
 - Handle null response in HTTP checks
