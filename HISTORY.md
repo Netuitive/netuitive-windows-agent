@@ -1,4 +1,5 @@
 ## vNext
+- Fixed a small typo in ReadSystemChecks.config
 
 ## v0.10.16
 - Improved ReadSystemChecks config to make it more clear where check entries should be placed.
