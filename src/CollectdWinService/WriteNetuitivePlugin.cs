@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Net;
 
 namespace Netuitive.CollectdWin
 {
@@ -64,6 +65,8 @@ namespace Netuitive.CollectdWin
             System.Reflection.AssemblyName assemblyName = System.Reflection.Assembly.GetEntryAssembly().GetName();
             _userAgent = assemblyName.Name + "-" + assemblyName.Version.ToString();
 
+            // Default for .NET 4.5 is TLS1.0 and SSL3
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11;
         }
 
         public void Start()

@@ -1,4 +1,5 @@
 ## vNext
+- Add support for TLS1.1 and TLS1.2 on startup
 
 ## v0.10.5
 - Handle null response in HTTP checks
