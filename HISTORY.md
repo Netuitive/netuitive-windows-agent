@@ -1,6 +1,7 @@
 ## vNext
+- Fixed a small typo in ReadSystemChecks.config
 
-## v0.10.16
+## v0.10.6
 - Improved ReadSystemChecks config to make it more clear where check entries should be placed.
 - Fixed Total Physical Memory detection for certain EC2 types
 
