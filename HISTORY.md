@@ -1,4 +1,5 @@
 ## vNext
+- Add support for TLS1.1 and TLS1.2 on startup
 - Fixed a small typo in ReadSystemChecks.config
 
 ## v0.10.6
