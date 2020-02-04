@@ -1,5 +1,6 @@
 ## vNext
 
+## v0.10.8
 - Retry checks
 
 ## v0.10.7
