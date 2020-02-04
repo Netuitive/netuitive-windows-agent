@@ -1,5 +1,7 @@
 ## vNext
 
+- Retry checks
+
 ## v0.10.7
 - Add support for TLS1.1 and TLS1.2 on startup
 - Fixed a small typo in ReadSystemChecks.config
