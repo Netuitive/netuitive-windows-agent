@@ -42,52 +42,67 @@ namespace BloombergFLP.CollectdWin
                 return (Environment.MachineName.ToLower());
         }
 
-        public static KeyValuePair<int, string> PostJson(string url,  string userAgent, string payload)
+        public static KeyValuePair<int, string> PostJson(string url, string userAgent, string payload, int maxRetries = 1)
         {
             string message = "";
             int statusCode = 200;
 
-            try
+            int count = -1;
+            int waitms = 500;
+
+            while (++count < maxRetries)
             {
-                using (var client = new WebClient())
+                try
                 {
-                    client.Headers[HttpRequestHeader.ContentType] = "application/json";
-                    client.Headers[HttpRequestHeader.UserAgent] = userAgent;
-                    message = client.UploadString(url, "POST", payload);
-                }
-            }
-            catch (System.Net.WebException ex)
-            {
-                Exception baseex = ex.GetBaseException();
-                if (baseex as ThreadInterruptedException != null)
-                {
-                    throw baseex;
-                }
-                else
-                {
-                    message = ex.Message;
-                    if (ex.Response as HttpWebResponse != null)
+                    using (var client = new WebClient())
                     {
-                        // Get the actual code
-                        statusCode = ((HttpWebResponse)ex.Response).StatusCode.GetHashCode();
+                        client.Headers[HttpRequestHeader.ContentType] = "application/json";
+                        client.Headers[HttpRequestHeader.UserAgent] = userAgent;
+                        message = client.UploadString(url, "POST", payload);
+                        return new KeyValuePair<int, string>(statusCode, message);
+                    }
+                }
+                catch (System.Net.WebException ex)
+                {
+                    Exception baseex = ex.GetBaseException();
+                    if (baseex as ThreadInterruptedException != null)
+                    {
+                        throw baseex;
                     }
                     else
                     {
-                        // use a generic client error
-                        statusCode = 400;
+                        message = ex.Message;
+                        if (ex.Response as HttpWebResponse != null)
+                        {
+                            // Get the actual code
+                            statusCode = ((HttpWebResponse)ex.Response).StatusCode.GetHashCode();
+                        }
+                        else
+                        {
+                            // use a generic client error
+                            statusCode = 400;
+                        }
+
                     }
 
-                    // HTTP return code is used as event log id
-                    LogEventInfo logEvent = LogEventInfo.Create(LogLevel.Error, Logger.Name, String.Format("Error posting payload to {0}", url), ex);
-                    logEvent.Properties.Add("EventID", statusCode);
-                    Logger.Log(logEvent);
+                    if (statusCode < 500 || statusCode >= 600) {
+                        // Do not retry
+                        // HTTP return code is used as event log id
+                        LogEventInfo logEvent = LogEventInfo.Create(LogLevel.Error, Logger.Name, String.Format("Error posting payload to {0}", url), ex);
+                        logEvent.Properties.Add("EventID", statusCode);
+                        Logger.Log(logEvent);
+                        break;
+                    }
 
+                    Logger.Info("Attempt {0} failed with status {1}. Retrying in {2}ms", count, statusCode, waitms);
+                    Thread.Sleep(waitms);
+                    waitms *= 2;
                 }
             }
 
             return new KeyValuePair<int, string>(statusCode, message);
         }
-    
+
         public static string SerialiseJsonObject(Object obj, Type type)
         {
             MemoryStream stream = new MemoryStream();
