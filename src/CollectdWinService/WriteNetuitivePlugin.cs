@@ -338,7 +338,7 @@ namespace Netuitive.CollectdWin
             {
 
                 string url = string.Join("/", new string[] { _checkIngestUrl, check.Name, check.HostName,check.CheckInterval.ToString() });
-                KeyValuePair<int, string> res = Util.PostJson(url, _userAgent, "");
+                KeyValuePair<int, string> res = Util.PostJson(url, _userAgent, "", 3);
 
                 bool isOK = ProcessResponseCode(res.Key);
                 if (!isOK)
