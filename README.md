@@ -3,7 +3,7 @@ Netuitive Windows Agent
 
 The Netuitive Windows Agent leverages CollectdWin to collect, aggregate, and publish windows performance counters and attributes to Netuitive. It is designed to expose crucial metrics from your Windows machines and display them in a meaningful way in [Netuitive](https://http://www.netuitive.com/). 
 
-See the [Netuitive Windows agent docs](https://help.netuitive.com/Content/Misc/Datasources/Windows/new_windows_datasource.htm) or the [wiki](../../wiki) for more information, or contact Netuitive support at [support@netuitive.com](mailto:support@netuitive.com).
+See the [Netuitive Windows agent docs](https://docs.virtana.com/en/windows-agent.html) or the [wiki](../../wiki) for more information, or contact Netuitive support at [support@netuitive.com](mailto:support@netuitive.com).
 
 Changes to CollectdWin
 -----------------------
